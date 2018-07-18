@@ -13,14 +13,14 @@ import (
 func main() {
 	s := readFile("evdeudir_2006_112.html")
 	doc := parse(s)
-	toRemove := make([]*html.Node, 0)
+	toReplace := make([]*html.Node, 0)
 	check := func(n *html.Node) {
-		if n.Type == html.ElementNode && n.Data == "script" || (n.Data == "link" && isStylesheetLink(n.Attr)) {
-			toRemove = append(toRemove, n)
+		if ignore(n) {
+			toReplace = append(toReplace, n)
 		}
 	}
 	scanTree(doc, check)
-	for _, node := range toRemove {
+	for _, node := range toReplace {
 		parent := node.Parent
 		parent.InsertBefore(toComment(node), node)
 		parent.RemoveChild(node)
@@ -56,6 +56,18 @@ func toComment(n *html.Node) *html.Node {
 	return m
 }
 
+func readFile(filename string) string {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Fatalf("fail to read file %s: %v", filename, err)
+	}
+	return string(data)
+}
+
+func ignore(n *html.Node) bool {
+	return n.Type == html.ElementNode && n.Data == "script" || (n.Data == "link" && isStylesheetLink(n.Attr))
+}
+
 func isStylesheetLink(attrs []html.Attribute) bool {
 	for _, attr := range attrs {
 		if attr.Key == "rel" && attr.Val == "stylesheet" {
@@ -63,12 +75,4 @@ func isStylesheetLink(attrs []html.Attribute) bool {
 		}
 	}
 	return false
-}
-
-func readFile(filename string) string {
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		log.Fatalf("fail to read file %s: %v", filename, err)
-	}
-	return string(data)
 }
