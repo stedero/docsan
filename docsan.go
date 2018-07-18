@@ -10,8 +10,7 @@ import (
 )
 
 func main() {
-	s := `<p>Links:</p><script>some javascript code</script><li><a href="foo">Foo</a><li><a href="/bar/baz">BarBaz</a></li><div><script src="burp.js"></script></div>`
-	s = `
+	s := `
 	<!DOCTYPE html
 	  PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 	
