@@ -1,7 +1,6 @@
 package san
 
 import (
-	"bytes"
 	"io"
 	"strings"
 
@@ -14,51 +13,29 @@ func Sanitize(writer io.Writer, data string) error {
 	if err != nil {
 		return err
 	}
-	toReplace := make([]*html.Node, 0, 10)
-	check := func(n *html.Node) {
-		if ignore(n) {
-			toReplace = append(toReplace, n)
-		}
-	}
-	scanTree(doc, check)
-	replaceWithComments(toReplace)
+	checker := newChecker(accept)
+	scanTree(doc, checker)
+	checker.ReplaceWithComments()
 	return html.Render(writer, doc)
 }
 
-func scanTree(n *html.Node, check func(*html.Node)) {
-	check(n)
+func scanTree(n *html.Node, checker *Checker) {
+	checker.Check(n)
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		scanTree(c, check)
+		scanTree(c, checker)
 	}
 }
 
-func replaceWithComments(nodes []*html.Node) {
-	for _, node := range nodes {
-		parent := node.Parent
-		parent.InsertBefore(toComment(node), node)
-		parent.RemoveChild(node)
-	}
+func accept(node *html.Node) bool {
+	return isScriptElement(node) || isStylesheetLink(node)
 }
 
-func toComment(n *html.Node) *html.Node {
-	var b bytes.Buffer
-	html.Render(&b, n)
-	m := &html.Node{
-		Type:     html.CommentNode,
-		DataAtom: n.DataAtom,
-		Data:     b.String(),
-		Attr:     make([]html.Attribute, len(n.Attr)),
-	}
-	copy(m.Attr, n.Attr)
-	return m
-}
-
-func ignore(node *html.Node) bool {
-	return node.Type == html.ElementNode && (node.Data == "script" || isStylesheetLink(node))
+func isScriptElement(node *html.Node) bool {
+	return node.Type == html.ElementNode && node.Data == "script"
 }
 
 func isStylesheetLink(node *html.Node) bool {
-	if node.Data == "link" {
+	if node.Type == html.ElementNode && node.Data == "link" {
 		for _, attr := range node.Attr {
 			if attr.Key == "rel" && attr.Val == "stylesheet" {
 				return true
