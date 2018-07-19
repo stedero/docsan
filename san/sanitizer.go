@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"golang.org/x/net/html"
+	"ibfd.org/docsan/node"
 )
 
 // Sanitize comments out unwanted elements in HTML
@@ -13,13 +14,13 @@ func Sanitize(writer io.Writer, data string) error {
 	if err != nil {
 		return err
 	}
-	checker := newChecker(accept)
+	checker := node.NewChecker(accept)
 	scanTree(doc, checker)
 	checker.ReplaceWithComments()
 	return html.Render(writer, doc)
 }
 
-func scanTree(n *html.Node, checker *Checker) {
+func scanTree(n *html.Node, checker *node.Checker) {
 	checker.Check(n)
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
 		scanTree(c, checker)

@@ -1,4 +1,4 @@
-package san
+package node
 
 import (
 	"bytes"
@@ -12,7 +12,8 @@ type Checker struct {
 	nodes  []*html.Node
 }
 
-func newChecker(accept func(*html.Node) bool) *Checker {
+// NewChecker creates a new node checker.
+func NewChecker(accept func(*html.Node) bool) *Checker {
 	return &Checker{accept, make([]*html.Node, 0, 10)}
 }
 
