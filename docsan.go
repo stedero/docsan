@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -14,7 +15,12 @@ import (
 const maxFormParseMemorySizeBytes = 10 * 1024 * 1024
 
 func main() {
-	server := http.Server{Addr: "localhost:8080"}
+	flag.Parse()
+	port := flag.Arg(0)
+	if port == "" {
+		port = "8080"
+	}
+	server := http.Server{Addr: "localhost:" + port}
 	log.Printf("docsan server started on %s", server.Addr)
 	http.HandleFunc("/", handle)
 	server.ListenAndServe()
