@@ -1,10 +1,11 @@
 package main
 
 import (
-	"docsan/san"
 	"io/ioutil"
 	"log"
 	"os"
+
+	"ibfd.org/docsan/san"
 )
 
 func main() {
