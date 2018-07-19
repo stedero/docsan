@@ -15,10 +15,13 @@ import (
 const maxFormParseMemorySizeBytes = 10 * 1024 * 1024
 
 func main() {
-	flag.Parse()
-	port := flag.Arg(0)
+	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		flag.Parse()
+		port := flag.Arg(0)
+		if port == "" {
+			port = "8080"
+		}
 	}
 	server := http.Server{Addr: "localhost:" + port}
 	log.Printf("docsan server started on %s", server.Addr)
