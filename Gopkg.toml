@@ -32,3 +32,7 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[metadat.heroku]
+  root-package = "ibfd.org/docsan"
+  ensure = "false"
