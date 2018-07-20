@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -49,7 +50,7 @@ func showForm(w http.ResponseWriter) {
 				<body>
 					<h1>DocSan - HTML document sanitizer</h1>
 					<form action="/" method="post" enctype="multipart/form-data">
-						<input type="file" name="upload"><br>
+						<input type="file" name="upload"><br><br>
 						<input type="submit">
 					</form>
 				</body>
@@ -58,51 +59,34 @@ func showForm(w http.ResponseWriter) {
 }
 
 func process(w http.ResponseWriter, r *http.Request) {
-	for k, v := range r.Header {
-		fmt.Printf("key[%s] value[%s]\n", k, v[0])
-	}
+	var err error
+	// for k, v := range r.Header {
+	// 	fmt.Printf("key[%s] value[%s]\n", k, v[0])
+	// }
 	contentType := r.Header["Content-Type"]
 	if contentType != nil && strings.HasPrefix(contentType[0], "multipart/form-data") {
 		r.ParseMultipartForm(maxFormParseMemorySizeBytes)
 		fileHeader := r.MultipartForm.File["upload"][0]
 		file, err := fileHeader.Open()
 		if err == nil {
-			data, err := ioutil.ReadAll(file)
-			if err == nil {
-				sanitize(w, data)
-				return
-			}
+			err = sanitize(w, file)
 		}
 	} else {
-		data, err := ioutil.ReadAll(r.Body)
-		if err == nil {
-			sanitize(w, data)
-			return
-		}
+		err = sanitize(w, r.Body)
 	}
-	w.WriteHeader(500)
-}
-
-func sanitize(w http.ResponseWriter, data []byte) {
-	log.Printf("file read succesfully %d bytes", len(data))
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(200)
-	san.Sanitize(w, string(data))
-}
-
-func fileSample() {
-	filename := "evdeudir_2006_112.html"
-	s := readFile(filename)
-	err := san.Sanitize(os.Stdout, s)
 	if err != nil {
-		log.Fatalf("failed to sanitize file %s: %v", filename, err)
+		w.WriteHeader(500)
+		w.Write([]byte(fmt.Sprintf("failed to sanitize: %v", err)))
 	}
 }
 
-func readFile(filename string) string {
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		log.Fatalf("fail to read file %s: %v", filename, err)
+func sanitize(w http.ResponseWriter, r io.Reader) error {
+	data, err := ioutil.ReadAll(r)
+	if err == nil {
+		log.Printf("read succesfully %d bytes", len(data))
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(200)
+		san.Sanitize(w, string(data))
 	}
-	return string(data)
+	return err
 }
