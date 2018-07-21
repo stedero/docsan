@@ -38,3 +38,17 @@ func toComment(n *html.Node) *html.Node {
 	html.Render(&b, n)
 	return &html.Node{Type: html.CommentNode, DataAtom: n.DataAtom, Data: b.String()}
 }
+
+// FindAll locates all nodes with the specified element name
+func (checker *Checker) FindAll(n *html.Node) []*html.Node {
+	checker.ScanTree(n)
+	return checker.nodes
+}
+
+// ScanTree walks the node tree
+func (checker *Checker) ScanTree(n *html.Node) {
+	checker.Check(n)
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		checker.ScanTree(c)
+	}
+}

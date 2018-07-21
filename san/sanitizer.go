@@ -15,16 +15,9 @@ func Sanitize(writer io.Writer, data string) error {
 		return err
 	}
 	checker := node.NewChecker(accept)
-	scanTree(doc, checker)
+	checker.ScanTree(doc)
 	checker.ReplaceWithComments()
 	return html.Render(writer, doc)
-}
-
-func scanTree(n *html.Node, checker *node.Checker) {
-	checker.Check(n)
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		scanTree(c, checker)
-	}
 }
 
 func accept(node *html.Node) bool {

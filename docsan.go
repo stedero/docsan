@@ -10,6 +10,9 @@ import (
 	"os"
 	"strings"
 
+	"golang.org/x/net/html"
+	"ibfd.org/docsan/node"
+
 	"ibfd.org/docsan/san"
 )
 
@@ -60,19 +63,25 @@ func showForm(w http.ResponseWriter) {
 
 func process(w http.ResponseWriter, r *http.Request) {
 	var err error
-	// for k, v := range r.Header {
-	// 	fmt.Printf("key[%s] value[%s]\n", k, v[0])
-	// }
-	contentType := r.Header["Content-Type"]
-	if contentType != nil && strings.HasPrefix(contentType[0], "multipart/form-data") {
-		r.ParseMultipartForm(maxFormParseMemorySizeBytes)
-		fileHeader := r.MultipartForm.File["upload"][0]
-		file, err := fileHeader.Open()
-		if err == nil {
-			err = sanitize(w, file)
-		}
+	for k, v := range r.Header {
+		fmt.Printf("key[%s] value[%s]\n", k, v[0])
+	}
+	accept := strings.Split(r.Header["Accept"][0], ",")
+	fmt.Printf("Accept: %v", accept)
+	if accept[0] == "application/json" {
+		renderJSON(w, r.Body)
 	} else {
-		err = sanitize(w, r.Body)
+		contentType := r.Header["Content-Type"]
+		if contentType != nil && strings.HasPrefix(contentType[0], "multipart/form-data") {
+			r.ParseMultipartForm(maxFormParseMemorySizeBytes)
+			fileHeader := r.MultipartForm.File["upload"][0]
+			file, err := fileHeader.Open()
+			if err == nil {
+				err = sanitize(w, file)
+			}
+		} else {
+			err = sanitize(w, r.Body)
+		}
 	}
 	if err != nil {
 		w.WriteHeader(500)
@@ -89,4 +98,38 @@ func sanitize(w http.ResponseWriter, r io.Reader) error {
 		san.Sanitize(w, string(data))
 	}
 	return err
+}
+
+func renderJSON(w http.ResponseWriter, r io.Reader) error {
+	data, err := ioutil.ReadAll(r)
+	if err == nil {
+		log.Printf("read succesfully %d bytes", len(data))
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		doc, err := html.Parse(strings.NewReader(string(data)))
+		if err != nil {
+			return err
+		}
+		checker := node.NewChecker(acceptHead)
+		heads := checker.FindAll(doc)
+		checker = node.NewChecker(acceptMeta)
+		metas := checker.FindAll(heads[0])
+		for _, meta := range metas {
+			log.Printf("meta key=%s value=%s", meta.Attr[0].Val, meta.Attr[1].Val)
+		}
+	}
+	return nil
+}
+
+func acceptHead(node *html.Node) bool {
+	return node.Type == html.ElementNode && node.Data == "head"
+}
+
+func acceptBody(node *html.Node) bool {
+	return node.Type == html.ElementNode && node.Data == "body"
+}
+
+func acceptMeta(node *html.Node) bool {
+	log.Printf("node %v", node)
+	return node.Type == html.ElementNode && node.Data == "meta" && len(node.Attr) == 2 && node.Attr[0].Key == "name"
 }
