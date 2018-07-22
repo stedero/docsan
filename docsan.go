@@ -113,14 +113,10 @@ func renderJSON(w http.ResponseWriter, r io.Reader) error {
 		if err != nil {
 			return err
 		}
-		checker := node.NewChecker(acceptHead)
-		head := checker.FindAll(htmlDoc)[0]
-		checker = node.NewChecker(acceptBody)
-		body := checker.FindAll(htmlDoc)[0]
-		checker = node.NewChecker(acceptTitle)
-		title := checker.FindAll(head)[0]
-		checker = node.NewChecker(acceptMeta)
-		metas := checker.FindAll(head)
+		head := node.FindFirst(htmlDoc, acceptHead)
+		body := node.FindFirst(htmlDoc, acceptBody)
+		title := node.FindFirst(head, acceptTitle)
+		metas := node.FindAll(head, acceptMeta)
 		document := doc.NewDocument(title, metas, body)
 		w.Write(document.ToJSON())
 	}

@@ -6,30 +6,31 @@ import (
 	"golang.org/x/net/html"
 )
 
-// Checker keeps track of nodes that need to be replaced
-type Checker struct {
+// checker holds nodes that match a condition
+type checker struct {
 	accept func(*html.Node) bool
 	nodes  []*html.Node
 }
 
-// NewChecker creates a new node checker.
-func NewChecker(accept func(*html.Node) bool) *Checker {
-	return &Checker{accept, make([]*html.Node, 0, 10)}
+func newChecker(accept func(*html.Node) bool) *checker {
+	return &checker{accept, make([]*html.Node, 0, 32)}
 }
 
-// Check determines whether a node needs to be accepted
-func (checker *Checker) Check(node *html.Node) {
-	if checker.accept(node) {
-		checker.nodes = append(checker.nodes, node)
+// Check determines whether a node must be accepted
+func (chkr *checker) check(node *html.Node) {
+	if chkr.accept(node) {
+		chkr.nodes = append(chkr.nodes, node)
 	}
 }
 
-// ReplaceWithComments replaces all collected nodes with comment nodes
-func (checker *Checker) ReplaceWithComments() {
-	for _, node := range checker.nodes {
-		parent := node.Parent
-		parent.InsertBefore(toComment(node), node)
-		parent.RemoveChild(node)
+// ReplaceWithComments replaces all nodes that are accepted with comment nodes
+func ReplaceWithComments(node *html.Node, accept func(*html.Node) bool) {
+	chkr := newChecker(accept)
+	chkr.scanTree(node)
+	for _, n := range chkr.nodes {
+		parent := n.Parent
+		parent.InsertBefore(toComment(n), n)
+		parent.RemoveChild(n)
 	}
 }
 
@@ -39,16 +40,26 @@ func toComment(n *html.Node) *html.Node {
 	return &html.Node{Type: html.CommentNode, DataAtom: n.DataAtom, Data: b.String()}
 }
 
-// FindAll locates all nodes with the specified element name
-func (checker *Checker) FindAll(n *html.Node) []*html.Node {
-	checker.ScanTree(n)
-	return checker.nodes
+// FindFirst finds the first node that matches a condition
+func FindFirst(n *html.Node, accept func(*html.Node) bool) *html.Node {
+	nodes := FindAll(n, accept)
+	if len(nodes) > 0 {
+		return nodes[0]
+	}
+	return nil
+}
+
+// FindAll find all nodes that match a condition
+func FindAll(n *html.Node, accept func(*html.Node) bool) []*html.Node {
+	chkr := newChecker(accept)
+	chkr.scanTree(n)
+	return chkr.nodes
 }
 
 // ScanTree walks the node tree
-func (checker *Checker) ScanTree(n *html.Node) {
-	checker.Check(n)
+func (chkr *checker) scanTree(n *html.Node) {
+	chkr.check(n)
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		checker.ScanTree(c)
+		chkr.scanTree(c)
 	}
 }

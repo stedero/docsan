@@ -23,9 +23,7 @@ func SanitizeHTML(data string) (*html.Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	checker := node.NewChecker(accept)
-	checker.ScanTree(doc)
-	checker.ReplaceWithComments()
+	node.ReplaceWithComments(doc, accept)
 	return doc, nil
 }
 
