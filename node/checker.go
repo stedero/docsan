@@ -17,7 +17,7 @@ func NewChecker(accept func(*html.Node) bool) *Checker {
 	return &Checker{accept, make([]*html.Node, 0, 10)}
 }
 
-// Check determines whether a node needs to be replaced
+// Check determines whether a node needs to be accepted
 func (checker *Checker) Check(node *html.Node) {
 	if checker.accept(node) {
 		checker.nodes = append(checker.nodes, node)
