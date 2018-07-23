@@ -3,18 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 
-	"golang.org/x/net/html"
-	"ibfd.org/docsan/doc"
-	"ibfd.org/docsan/node"
-
-	"ibfd.org/docsan/san"
+	"ibfd.org/docsan/render"
 )
 
 const maxFormParseMemorySizeBytes = 10 * 1024 * 1024
@@ -70,7 +64,7 @@ func process(w http.ResponseWriter, r *http.Request) {
 	accept := strings.Split(r.Header["Accept"][0], ",")
 	fmt.Printf("Accept: %v", accept)
 	if accept[0] == "application/json" {
-		err = renderJSON(w, r.Body)
+		err = render.ToJSON(w, r.Body)
 	} else {
 		contentType := r.Header["Content-Type"]
 		if contentType != nil && strings.HasPrefix(contentType[0], "multipart/form-data") {
@@ -78,63 +72,14 @@ func process(w http.ResponseWriter, r *http.Request) {
 			fileHeader := r.MultipartForm.File["upload"][0]
 			file, err := fileHeader.Open()
 			if err == nil {
-				err = renderJSON(w, file)
-				// err = sanitize(w, file)
+				err = render.ToJSON(w, file)
 			}
 		} else {
-			err = renderJSON(w, r.Body)
-			// err = sanitize(w, r.Body)
+			err = render.ToJSON(w, r.Body)
 		}
 	}
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(fmt.Sprintf("failed to sanitize: %v", err)))
 	}
-}
-
-func sanitize(w http.ResponseWriter, r io.Reader) error {
-	data, err := ioutil.ReadAll(r)
-	if err == nil {
-		log.Printf("read succesfully %d bytes", len(data))
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(200)
-		san.Sanitize(w, string(data))
-	}
-	return err
-}
-
-func renderJSON(w http.ResponseWriter, r io.Reader) error {
-	data, err := ioutil.ReadAll(r)
-	if err == nil {
-		log.Printf("read succesfully %d bytes", len(data))
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(200)
-		htmlDoc, err := san.SanitizeHTML(string(data))
-		if err != nil {
-			return err
-		}
-		head := node.FindFirst(htmlDoc, acceptHead)
-		body := node.FindFirst(htmlDoc, acceptBody)
-		title := node.FindFirst(head, acceptTitle)
-		metas := node.FindAll(head, acceptMeta)
-		document := doc.NewDocument(title, metas, body)
-		w.Write(document.ToJSON())
-	}
-	return nil
-}
-
-func acceptHead(node *html.Node) bool {
-	return node.Type == html.ElementNode && node.Data == "head"
-}
-
-func acceptTitle(node *html.Node) bool {
-	return node.Type == html.ElementNode && node.Data == "title"
-}
-
-func acceptBody(node *html.Node) bool {
-	return node.Type == html.ElementNode && node.Data == "body"
-}
-
-func acceptMeta(node *html.Node) bool {
-	return node.Type == html.ElementNode && node.Data == "meta"
 }
