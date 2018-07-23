@@ -61,22 +61,16 @@ func process(w http.ResponseWriter, r *http.Request) {
 	for k, v := range r.Header {
 		fmt.Printf("key[%s] value[%s]\n", k, v[0])
 	}
-	accept := strings.Split(r.Header["Accept"][0], ",")
-	fmt.Printf("Accept: %v", accept)
-	if accept[0] == "application/json" {
-		err = render.ToJSON(w, r.Body)
-	} else {
-		contentType := r.Header["Content-Type"]
-		if contentType != nil && strings.HasPrefix(contentType[0], "multipart/form-data") {
-			r.ParseMultipartForm(maxFormParseMemorySizeBytes)
-			fileHeader := r.MultipartForm.File["upload"][0]
-			file, err := fileHeader.Open()
-			if err == nil {
-				err = render.ToJSON(w, file)
-			}
-		} else {
-			err = render.ToJSON(w, r.Body)
+	contentType := r.Header["Content-Type"]
+	if contentType != nil && strings.HasPrefix(contentType[0], "multipart/form-data") {
+		r.ParseMultipartForm(maxFormParseMemorySizeBytes)
+		fileHeader := r.MultipartForm.File["upload"][0]
+		file, err := fileHeader.Open()
+		if err == nil {
+			err = render.ToJSON(w, file)
 		}
+	} else {
+		err = render.ToJSON(w, r.Body)
 	}
 	if err != nil {
 		w.WriteHeader(500)
