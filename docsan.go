@@ -59,7 +59,7 @@ func showForm(w http.ResponseWriter) {
 func process(w http.ResponseWriter, r *http.Request) {
 	var err error
 	for k, v := range r.Header {
-		fmt.Printf("key[%s] value[%s]\n", k, v[0])
+		fmt.Printf("key[%s] = %v\n", k, v)
 	}
 	contentType := r.Header["Content-Type"]
 	if contentType != nil && strings.HasPrefix(contentType[0], "multipart/form-data") {
