@@ -6,7 +6,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-// checker holds nodes that match a condition
+// checker holds nodes that are accepted by the accept function
 type checker struct {
 	accept func(*html.Node) bool
 	nodes  []*html.Node
@@ -26,7 +26,7 @@ func (chkr *checker) check(node *html.Node) {
 // ReplaceWithComments replaces all nodes that are accepted with comment nodes
 func ReplaceWithComments(node *html.Node, accept func(*html.Node) bool) {
 	chkr := newChecker(accept)
-	chkr.scanTree(node)
+	chkr.walk(node)
 	for _, n := range chkr.nodes {
 		parent := n.Parent
 		parent.InsertBefore(toComment(n), n)
@@ -40,7 +40,7 @@ func toComment(n *html.Node) *html.Node {
 	return &html.Node{Type: html.CommentNode, DataAtom: n.DataAtom, Data: b.String()}
 }
 
-// FindFirst finds the first node that matches a condition
+// FindFirst finds the first node that is accepted
 func FindFirst(n *html.Node, accept func(*html.Node) bool) *html.Node {
 	nodes := FindAll(n, accept)
 	if len(nodes) > 0 {
@@ -49,17 +49,17 @@ func FindFirst(n *html.Node, accept func(*html.Node) bool) *html.Node {
 	return nil
 }
 
-// FindAll find all nodes that match a condition
+// FindAll finds all nodes that are accepted
 func FindAll(n *html.Node, accept func(*html.Node) bool) []*html.Node {
 	chkr := newChecker(accept)
-	chkr.scanTree(n)
+	chkr.walk(n)
 	return chkr.nodes
 }
 
-// ScanTree walks the node tree
-func (chkr *checker) scanTree(n *html.Node) {
+// walk the node tree
+func (chkr *checker) walk(n *html.Node) {
 	chkr.check(n)
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		chkr.scanTree(c)
+		chkr.walk(c)
 	}
 }
