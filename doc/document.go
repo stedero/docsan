@@ -3,7 +3,6 @@ package doc
 import (
 	"bytes"
 	"encoding/json"
-	"log"
 
 	"golang.org/x/net/html"
 )
@@ -21,12 +20,8 @@ func NewDocument(titleNode *html.Node, metaNodes []*html.Node, bodyNode *html.No
 }
 
 // ToJSON transforms a document to JSON
-func (document *Document) ToJSON() []byte {
-	data, err := json.MarshalIndent(document, "", "    ")
-	if err != nil {
-		log.Fatalf("error marshaling HTML JSON: %v", err)
-	}
-	return data
+func (document *Document) ToJSON() ([]byte, error) {
+	return json.MarshalIndent(document, "", "    ")
 }
 
 func toMetas(nodes []*html.Node) []map[string]string {

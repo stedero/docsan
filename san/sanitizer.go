@@ -2,24 +2,23 @@ package san
 
 import (
 	"io"
-	"strings"
 
 	"golang.org/x/net/html"
 	"ibfd.org/docsan/node"
 )
 
 // Sanitize comments out unwanted elements in HTML
-func Sanitize(writer io.Writer, data string) error {
-	doc, err := SanitizeHTML(data)
+func Sanitize(w io.Writer, r io.Reader) error {
+	doc, err := SanitizeHTML(r)
 	if err != nil {
 		return err
 	}
-	return html.Render(writer, doc)
+	return html.Render(w, doc)
 }
 
 // SanitizeHTML comments out unwanted elements in HTML
-func SanitizeHTML(data string) (*html.Node, error) {
-	doc, err := html.Parse(strings.NewReader(data))
+func SanitizeHTML(r io.Reader) (*html.Node, error) {
+	doc, err := html.Parse(r)
 	if err != nil {
 		return nil, err
 	}

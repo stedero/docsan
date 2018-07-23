@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 
 	"ibfd.org/docsan/render"
+	"ibfd.org/docsan/san"
 )
 
 const maxFormParseMemorySizeBytes = 10 * 1024 * 1024
@@ -57,23 +59,37 @@ func showForm(w http.ResponseWriter) {
 }
 
 func process(w http.ResponseWriter, r *http.Request) {
-	var err error
-	for k, v := range r.Header {
-		fmt.Printf("key[%s] = %v\n", k, v)
-	}
-	contentType := r.Header["Content-Type"]
-	if contentType != nil && strings.HasPrefix(contentType[0], "multipart/form-data") {
-		r.ParseMultipartForm(maxFormParseMemorySizeBytes)
-		fileHeader := r.MultipartForm.File["upload"][0]
-		file, err := fileHeader.Open()
+	logHeaders(r)
+	reader, err := getReader(r)
+	if err == nil {
+		htmlDoc, err := san.SanitizeHTML(reader)
 		if err == nil {
-			err = render.ToJSON(w, file)
+			jsonData, err := render.ToJSON(htmlDoc)
+			if err == nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(200)
+				w.Write(jsonData)
+			}
 		}
-	} else {
-		err = render.ToJSON(w, r.Body)
 	}
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(fmt.Sprintf("failed to sanitize: %v", err)))
+	}
+}
+
+func getReader(r *http.Request) (io.Reader, error) {
+	contentType := r.Header["Content-Type"]
+	if contentType != nil && strings.HasPrefix(contentType[0], "multipart/form-data") {
+		r.ParseMultipartForm(maxFormParseMemorySizeBytes)
+		fileHeader := r.MultipartForm.File["upload"][0]
+		return fileHeader.Open()
+	}
+	return r.Body, nil
+}
+
+func logHeaders(r *http.Request) {
+	for k, v := range r.Header {
+		fmt.Printf("key[%s] = %v\n", k, v)
 	}
 }
