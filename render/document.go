@@ -7,7 +7,7 @@ import (
 	"ibfd.org/docsan/node"
 )
 
-// Document defines a document to render as JSON
+// document defines a document to render as JSON
 type document struct {
 	Title string              `json:"title"`
 	Metas []map[string]string `json:"metas"`
