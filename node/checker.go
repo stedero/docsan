@@ -1,8 +1,6 @@
 package node
 
 import (
-	"bytes"
-
 	"golang.org/x/net/html"
 )
 
@@ -35,9 +33,7 @@ func ReplaceWithComments(node *html.Node, accept func(*html.Node) bool) {
 }
 
 func toComment(n *html.Node) *html.Node {
-	var b bytes.Buffer
-	html.Render(&b, n)
-	return &html.Node{Type: html.CommentNode, DataAtom: n.DataAtom, Data: b.String()}
+	return &html.Node{Type: html.CommentNode, DataAtom: n.DataAtom, Data: ToString(n)}
 }
 
 // FindFirst finds the first node that is accepted

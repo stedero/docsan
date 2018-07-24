@@ -7,15 +7,6 @@ import (
 	"ibfd.org/docsan/node"
 )
 
-// Sanitize comments out unwanted elements in HTML
-func Sanitize(w io.Writer, r io.Reader) error {
-	doc, err := SanitizeHTML(r)
-	if err != nil {
-		return err
-	}
-	return html.Render(w, doc)
-}
-
 // SanitizeHTML comments out unwanted elements in HTML
 func SanitizeHTML(r io.Reader) (*html.Node, error) {
 	doc, err := html.Parse(r)
