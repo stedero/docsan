@@ -5,10 +5,10 @@ services:
     hostname: docsan
     image: ${REGISTRY}/ibfd/docsan:latest
     restart: always
-    ports:
-     - 9997:8080
     networks:
      - exposed
+    ports:
+     - 9997:8080
     cpu_quota: 50000
     mem_limit: '512m'
     dns:

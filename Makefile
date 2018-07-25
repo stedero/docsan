@@ -11,7 +11,7 @@ clean:
 
 ci-build:
 	docker run ${RUNOPTS} ${GOLANG} ./alpine_build.sh
-	cp main docker/docsan
+	cp docsan docker/docsan
 	docker build docker/ -t ${REGISTRY}/${IMAGE}:latest
 	docker tag ${REGISTRY}/${IMAGE}:latest ${REGISTRY}/${IMAGE}:${TAG}
 	docker push ${REGISTRY}/${IMAGE}:latest
