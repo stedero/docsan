@@ -12,7 +12,7 @@ clean:
 
 version:
 	@echo "package main" > version.go
-	@echo "const version = \"${VERSION}\";" >> version.go
+	@echo "const version = \"${VERSION}\"" >> version.go
 
 ci-build: version
 	docker run ${RUNOPTS} ${GOLANG} ./alpine_build.sh
