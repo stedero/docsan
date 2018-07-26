@@ -15,6 +15,7 @@ ci-build:
 	cp docsan docker/docsan
 	docker build docker/ -t ${REGISTRY}/${IMAGE}:latest
 	docker tag ${REGISTRY}/${IMAGE}:latest ${REGISTRY}/${IMAGE}:${TAG}
+	docker tag ${REGISTRY}/${IMAGE}:latest ${REGISTRY}/${IMAGE}:${VERSION}
 	docker push ${REGISTRY}/${IMAGE}:latest
 	docker push ${REGISTRY}/${IMAGE}:${TAG}
 	docker push ${REGISTRY}/${IMAGE}:${VERSION}
