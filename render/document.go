@@ -7,13 +7,18 @@ import (
 	"ibfd.org/docsan/node"
 )
 
+// JSON defines pre-rendered JSON
+type JSON struct {
+	json []byte
+}
+
 // document defines a document to render as JSON
 type document struct {
-	Generated string 			`json:"generated"`
-	Title   string              `json:"title"`
-	Outline string              `json:"outline"`
-	Metas   []map[string]string `json:"metas"`
-	Body    string              `json:"body"`
+	Generated string              `json:"generated"`
+	Title     string              `json:"title"`
+	Outline   JSON                `json:"outline"`
+	Metas     []map[string]string `json:"metas"`
+	Body      string              `json:"body"`
 }
 
 // ToJSON transforms a HTML node to JSON
@@ -33,9 +38,13 @@ func newDocument(version string, titleNode *html.Node, outline *html.Node, metaN
 	return &document{"docsan " + version, node.ToString(titleNode), formatOutline(outline), toMetas(metaNodes), node.ToString(bodyNode)}
 }
 
-// TODO: change in order to get the pre-created JSON field outline properly rendered.
 func (d *document) toJSON() ([]byte, error) {
 	return json.MarshalIndent(d, "", "    ")
+}
+
+// MarshalJSON marshals a pre-rendered JSON object
+func (j JSON) MarshalJSON() ([]byte, error) {
+	return j.json, nil
 }
 
 func toMetas(nodes []*html.Node) []map[string]string {
@@ -56,9 +65,13 @@ func commentTargetSelector() node.Check {
 	return node.Or(isScript, isStylesheetLink)
 }
 
-func formatOutline(n *html.Node) string {
-	if (n == nil) {
-		return ""
-	} 
-	return node.ToString(n)
+func formatOutline(n *html.Node) JSON {
+	var data []byte
+	if n == nil {
+		data = []byte("{}")
+	} else {
+		data = node.ToBytes(n.FirstChild)
+		data = []byte("{}") // TODO: what do we need here?
+	}
+	return JSON{data}
 }
