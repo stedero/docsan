@@ -1,6 +1,5 @@
 include /usr/local/IBFD/etc/docker.env
-
-export VERSION=1.0
+include version.env
 
 PROJECT=docsan
 
