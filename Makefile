@@ -1,4 +1,4 @@
-include /usr/local/IBFD/etc/docker.env
+#include /usr/local/IBFD/etc/docker.env
 
 TAG=$(shell date +%Y-%m-%d-%H%M)
 VERSION=1.0
@@ -9,6 +9,10 @@ RUNOPTS=--rm --network ibfd_exposed -v ${HOME}/.ssh:/root/.ssh -v "${PWD}":/usr/
 
 clean:
 	rm -f main
+
+version:
+	@echo "package main" > version.go
+	@echo "const version = \"${VERSION}\";" >> version.go
 
 ci-build:
 	docker run ${RUNOPTS} ${GOLANG} ./alpine_build.sh
