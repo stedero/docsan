@@ -1,4 +1,4 @@
-#include /usr/local/IBFD/etc/docker.env
+include /usr/local/IBFD/etc/docker.env
 
 TAG=$(shell date +%Y-%m-%d-%H%M)
 VERSION=1.0
