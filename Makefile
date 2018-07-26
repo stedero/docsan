@@ -1,6 +1,7 @@
 include /usr/local/IBFD/etc/docker.env
 
 TAG=$(shell date +%Y-%m-%d-%H%M)
+VERSION=1.0
 IMAGE=ibfd/docsan
 
 GOLANG=golang:1.8
@@ -16,6 +17,7 @@ ci-build:
 	docker tag ${REGISTRY}/${IMAGE}:latest ${REGISTRY}/${IMAGE}:${TAG}
 	docker push ${REGISTRY}/${IMAGE}:latest
 	docker push ${REGISTRY}/${IMAGE}:${TAG}
+	docker push ${REGISTRY}/${IMAGE}:${VERSION}
 	tar czvf package.tgz docker
 
 goshell:
