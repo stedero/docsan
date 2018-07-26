@@ -1,5 +1,7 @@
 include /usr/local/IBFD/etc/docker.env
 
+export VERSION=1.0
+
 PROJECT=docsan
 
 silentstart:

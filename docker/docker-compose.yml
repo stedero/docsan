@@ -3,7 +3,7 @@ services:
   docsan:
     container_name: docsan
     hostname: docsan
-    image: ${REGISTRY}/ibfd/docsan:latest
+    image: ${REGISTRY}/ibfd/docsan:${VERSION}
     restart: always
     networks:
      - exposed
