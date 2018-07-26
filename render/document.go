@@ -9,28 +9,32 @@ import (
 
 // document defines a document to render as JSON
 type document struct {
-	Title string              `json:"title"`
-	Metas []map[string]string `json:"metas"`
-	Body  string              `json:"body"`
+	Title   string              `json:"title"`
+	Outline string              `json:"outline"`
+	Metas   []map[string]string `json:"metas"`
+	Body    string              `json:"body"`
 }
 
 // ToJSON transforms a HTML node to JSON
 func ToJSON(htmlDoc *html.Node) ([]byte, error) {
 	head := node.FindFirst(htmlDoc, node.Element("head"))
-	body := node.FindFirst(htmlDoc, node.Element("body"))
 	title := node.FindFirst(head, node.Element("title"))
+	outline := node.FindFirst(head, node.And(node.Element("script"), node.Attr("id", "outline")))
 	metas := node.FindAll(head, node.Element("meta"))
-	d := newDocument(title, metas, body)
+	body := node.FindFirst(htmlDoc, node.Element("body"))
+	sanitizedBody := node.ReplaceWithComments(body, commentTargetSelector())
+	d := newDocument(title, outline, metas, sanitizedBody)
 	return d.toJSON()
 }
 
-func (d *document) toJSON() ([]byte, error) {
-	return json.MarshalIndent(d, "", "    ")
+// newDocument create a new document
+func newDocument(titleNode *html.Node, outline *html.Node, metaNodes []*html.Node, bodyNode *html.Node) *document {
+	return &document{node.ToString(titleNode), formatOutline(outline), toMetas(metaNodes), node.ToString(bodyNode)}
 }
 
-// newDocument create a new document
-func newDocument(titleNode *html.Node, metaNodes []*html.Node, bodyNode *html.Node) *document {
-	return &document{node.ToString(titleNode), toMetas(metaNodes), node.ToString(bodyNode)}
+// TODO: change in order to get the pre-created JSON field outline properly rendered.
+func (d *document) toJSON() ([]byte, error) {
+	return json.MarshalIndent(d, "", "    ")
 }
 
 func toMetas(nodes []*html.Node) []map[string]string {
@@ -43,4 +47,17 @@ func toMetas(nodes []*html.Node) []map[string]string {
 		metas = append(metas, m)
 	}
 	return metas
+}
+
+func commentTargetSelector() node.Check {
+	isScript := node.Element("script")
+	isStylesheetLink := node.And(node.Element("link"), node.Attr("rel", "stylesheet"))
+	return node.Or(isScript, isStylesheetLink)
+}
+
+func formatOutline(n *html.Node) string {
+	if (n == nil) {
+		return ""
+	} 
+	return node.ToString(n)
 }

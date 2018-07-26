@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
+	"golang.org/x/net/html"
 	"ibfd.org/docsan/render"
-	"ibfd.org/docsan/san"
 )
 
 const maxFormParseMemorySizeBytes = 10 * 1024 * 1024
@@ -62,7 +62,7 @@ func process(w http.ResponseWriter, r *http.Request) {
 	logHeaders(r)
 	reader, err := getReader(r)
 	if err == nil {
-		htmlDoc, err := san.SanitizeHTML(reader)
+		htmlDoc, err := html.Parse(reader)
 		if err == nil {
 			jsonData, err := render.ToJSON(htmlDoc)
 			if err == nil {
