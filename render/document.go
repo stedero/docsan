@@ -9,6 +9,7 @@ import (
 
 // document defines a document to render as JSON
 type document struct {
+	Generated string 			`json:"generated"`
 	Title   string              `json:"title"`
 	Outline string              `json:"outline"`
 	Metas   []map[string]string `json:"metas"`
@@ -16,20 +17,20 @@ type document struct {
 }
 
 // ToJSON transforms a HTML node to JSON
-func ToJSON(htmlDoc *html.Node) ([]byte, error) {
+func ToJSON(htmlDoc *html.Node, version string) ([]byte, error) {
 	head := node.FindFirst(htmlDoc, node.Element("head"))
 	title := node.FindFirst(head, node.Element("title"))
 	outline := node.FindFirst(head, node.And(node.Element("script"), node.Attr("id", "outline")))
 	metas := node.FindAll(head, node.Element("meta"))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
 	sanitizedBody := node.ReplaceWithComments(body, commentTargetSelector())
-	d := newDocument(title, outline, metas, sanitizedBody)
+	d := newDocument(version, title, outline, metas, sanitizedBody)
 	return d.toJSON()
 }
 
 // newDocument create a new document
-func newDocument(titleNode *html.Node, outline *html.Node, metaNodes []*html.Node, bodyNode *html.Node) *document {
-	return &document{node.ToString(titleNode), formatOutline(outline), toMetas(metaNodes), node.ToString(bodyNode)}
+func newDocument(version string, titleNode *html.Node, outline *html.Node, metaNodes []*html.Node, bodyNode *html.Node) *document {
+	return &document{"docsan " + version, node.ToString(titleNode), formatOutline(outline), toMetas(metaNodes), node.ToString(bodyNode)}
 }
 
 // TODO: change in order to get the pre-created JSON field outline properly rendered.

@@ -25,7 +25,7 @@ func main() {
 		}
 	}
 	server := http.Server{Addr: ":" + port}
-	log.Printf("docsan server started on %s", server.Addr)
+	log.Printf("docsan %s started on %s", version, server.Addr)
 	http.HandleFunc("/", handle)
 	server.ListenAndServe()
 }
@@ -64,7 +64,7 @@ func process(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		htmlDoc, err := html.Parse(reader)
 		if err == nil {
-			jsonData, err := render.ToJSON(htmlDoc)
+			jsonData, err := render.ToJSON(htmlDoc, version)
 			if err == nil {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(200)
