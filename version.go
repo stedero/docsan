@@ -1,3 +1,3 @@
 package main
 
-const version = "123";
+const version = "test123"
