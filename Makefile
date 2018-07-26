@@ -14,7 +14,7 @@ version:
 	@echo "package main" > version.go
 	@echo "const version = \"${VERSION}\";" >> version.go
 
-ci-build:
+ci-build: version
 	docker run ${RUNOPTS} ${GOLANG} ./alpine_build.sh
 	cp docsan docker/docsan
 	docker build docker/ -t ${REGISTRY}/${IMAGE}:latest
