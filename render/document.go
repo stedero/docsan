@@ -16,22 +16,16 @@ type document struct {
 
 // ToJSON transforms a HTML node to JSON
 func ToJSON(htmlDoc *html.Node) ([]byte, error) {
-	head := node.FindFirst(htmlDoc, accept("head"))
-	body := node.FindFirst(htmlDoc, accept("body"))
-	title := node.FindFirst(head, accept("title"))
-	metas := node.FindAll(head, accept("meta"))
+	head := node.FindFirst(htmlDoc, node.Element("head"))
+	body := node.FindFirst(htmlDoc, node.Element("body"))
+	title := node.FindFirst(head, node.Element("title"))
+	metas := node.FindAll(head, node.Element("meta"))
 	d := newDocument(title, metas, body)
 	return d.toJSON()
 }
 
 func (d *document) toJSON() ([]byte, error) {
 	return json.MarshalIndent(d, "", "    ")
-}
-
-func accept(element string) func(*html.Node) bool {
-	return func(n *html.Node) bool {
-		return n.Type == html.ElementNode && n.Data == element
-	}
 }
 
 // newDocument create a new document

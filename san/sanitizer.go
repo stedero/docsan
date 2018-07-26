@@ -13,25 +13,12 @@ func SanitizeHTML(r io.Reader) (*html.Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	node.ReplaceWithComments(doc, accept)
+	node.ReplaceWithComments(doc, accept())
 	return doc, nil
 }
 
-func accept(node *html.Node) bool {
-	return isScriptElement(node) || isStylesheetLink(node)
-}
-
-func isScriptElement(node *html.Node) bool {
-	return node.Type == html.ElementNode && node.Data == "script"
-}
-
-func isStylesheetLink(node *html.Node) bool {
-	if node.Type == html.ElementNode && node.Data == "link" {
-		for _, attr := range node.Attr {
-			if attr.Key == "rel" && attr.Val == "stylesheet" {
-				return true
-			}
-		}
-	}
-	return false
+func accept() node.Check {
+	isScript := node.Element("script")
+	isStylesheetLink := node.And(node.Element("link"), node.Attr("rel", "stylesheet"))
+	return node.Or(isScript, isStylesheetLink)
 }
