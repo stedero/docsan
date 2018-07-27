@@ -67,6 +67,13 @@ func (chkr *checker) walk(n *html.Node) {
 	}
 }
 
+// ToBytes renders a node to bytes
+func ToBytes(node *html.Node) []byte {
+	var b bytes.Buffer
+	html.Render(&b, node)
+	return b.Bytes()
+}
+
 // ToString renders a node to a string
 func ToString(node *html.Node) string {
 	var b bytes.Buffer
