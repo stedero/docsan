@@ -2,7 +2,6 @@ package render
 
 import (
 	"encoding/json"
-	"log"
 
 	"golang.org/x/net/html"
 	"ibfd.org/docsan/node"
@@ -45,7 +44,6 @@ func (d *document) toJSON() ([]byte, error) {
 
 // MarshalJSON marshals a pre-rendered JSON object
 func (j JSON) MarshalJSON() ([]byte, error) {
-	log.Printf("JSON: %s", string(j.json))
 	return []byte(j.json), nil
 }
 
