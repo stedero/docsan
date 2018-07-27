@@ -22,20 +22,20 @@ type document struct {
 }
 
 // ToJSON transforms a HTML node to JSON
-func ToJSON(htmlDoc *html.Node, version string) ([]byte, error) {
+func ToJSON(htmlDoc *html.Node, generated string) ([]byte, error) {
 	head := node.FindFirst(htmlDoc, node.Element("head"))
 	title := node.FindFirst(head, node.Element("title"))
 	outline := node.FindFirst(head, node.And(node.Element("script"), node.Attr("id", "outline")))
 	metas := node.FindAll(head, node.Element("meta"))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
 	sanitizedBody := node.ReplaceWithComments(body, commentTargetSelector())
-	d := newDocument(version, title, outline, metas, sanitizedBody)
+	d := newDocument(generated, title, outline, metas, sanitizedBody)
 	return d.toJSON()
 }
 
 // newDocument create a new document
-func newDocument(version string, titleNode *html.Node, outline *html.Node, metaNodes []*html.Node, bodyNode *html.Node) *document {
-	return &document{"docsan " + version, node.Content(titleNode), formatOutline(outline), toMetas(metaNodes), node.Render(bodyNode)}
+func newDocument(generated string, titleNode *html.Node, outline *html.Node, metaNodes []*html.Node, bodyNode *html.Node) *document {
+	return &document{"docsan " + generated, node.Content(titleNode), formatOutline(outline), toMetas(metaNodes), node.Render(bodyNode)}
 }
 
 func (d *document) toJSON() ([]byte, error) {

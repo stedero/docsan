@@ -1,43 +1,36 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"golang.org/x/net/html"
+	"ibfd.org/docsan/config"
 	"ibfd.org/docsan/render"
 )
 
 const maxFormParseMemorySizeBytes = 10 * 1024 * 1024
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		flag.Parse()
-		port = flag.Arg(0)
-		if port == "" {
-			port = "8080"
-		}
-	}
-	server := http.Server{Addr: ":" + port}
+	server := http.Server{Addr: ":" + config.GetPort()}
 	log.Printf("docsan %s started on %s", version, server.Addr)
-	http.HandleFunc("/", handle)
+	http.HandleFunc("/", handler(config.MetaAccept()))
 	server.ListenAndServe()
 }
 
-func handle(w http.ResponseWriter, r *http.Request) {
-	log.Printf("method: %s: %s", r.Method, r.RequestURI)
-	switch r.Method {
-	case "GET":
-		showForm(w)
-	case "POST":
-		process(w, r)
-	default:
+func handler(metaAccept func(string) bool) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("method: %s: %s", r.Method, r.RequestURI)
+		switch r.Method {
+		case "GET":
+			showForm(w)
+		case "POST":
+			process(metaAccept, w, r)
+		default:
+		}
 	}
 }
 
@@ -58,7 +51,7 @@ func showForm(w http.ResponseWriter) {
 	w.Write([]byte(form))
 }
 
-func process(w http.ResponseWriter, r *http.Request) {
+func process(metaAccept func(string) bool, w http.ResponseWriter, r *http.Request) {
 	logHeaders(r)
 	reader, err := getReader(r)
 	if err == nil {
