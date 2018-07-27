@@ -40,7 +40,7 @@ func ReplaceWithComments(node *html.Node, accept Check) *html.Node {
 }
 
 func toComment(n *html.Node) *html.Node {
-	return &html.Node{Type: html.CommentNode, DataAtom: n.DataAtom, Data: ToString(n)}
+	return &html.Node{Type: html.CommentNode, DataAtom: n.DataAtom, Data: Render(n)}
 }
 
 // FindFirst finds the first node that is accepted
@@ -74,8 +74,13 @@ func ToBytes(node *html.Node) []byte {
 	return b.Bytes()
 }
 
-// ToString renders a node to a string
-func ToString(node *html.Node) string {
+// Content gets the first child node as an unescaped HTML string.
+func Content(node *html.Node) string {
+	return html.UnescapeString(Render(node.FirstChild))
+}
+
+// Render a node to a string
+func Render(node *html.Node) string {
 	var b bytes.Buffer
 	html.Render(&b, node)
 	return b.String()

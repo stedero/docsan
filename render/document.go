@@ -2,6 +2,7 @@ package render
 
 import (
 	"encoding/json"
+	"log"
 
 	"golang.org/x/net/html"
 	"ibfd.org/docsan/node"
@@ -9,14 +10,14 @@ import (
 
 // JSON defines pre-rendered JSON
 type JSON struct {
-	json []byte
+	json string
 }
 
 // document defines a document to render as JSON
 type document struct {
 	Generated string              `json:"generated"`
 	Title     string              `json:"title"`
-	Outline   JSON                `json:"outline"`
+	Outline   *JSON               `json:"outline"`
 	Metas     []map[string]string `json:"metas"`
 	Body      string              `json:"body"`
 }
@@ -35,7 +36,7 @@ func ToJSON(htmlDoc *html.Node, version string) ([]byte, error) {
 
 // newDocument create a new document
 func newDocument(version string, titleNode *html.Node, outline *html.Node, metaNodes []*html.Node, bodyNode *html.Node) *document {
-	return &document{"docsan " + version, node.ToString(titleNode), formatOutline(outline), toMetas(metaNodes), node.ToString(bodyNode)}
+	return &document{"docsan " + version, node.Content(titleNode), formatOutline(outline), toMetas(metaNodes), node.Render(bodyNode)}
 }
 
 func (d *document) toJSON() ([]byte, error) {
@@ -44,7 +45,8 @@ func (d *document) toJSON() ([]byte, error) {
 
 // MarshalJSON marshals a pre-rendered JSON object
 func (j JSON) MarshalJSON() ([]byte, error) {
-	return j.json, nil
+	log.Printf("JSON: %s", string(j.json))
+	return []byte(j.json), nil
 }
 
 func toMetas(nodes []*html.Node) []map[string]string {
@@ -52,7 +54,7 @@ func toMetas(nodes []*html.Node) []map[string]string {
 	for _, node := range nodes {
 		m := make(map[string]string)
 		for _, attr := range node.Attr {
-			m[attr.Key] = attr.Val
+			m[attr.Key] = html.UnescapeString(attr.Val)
 		}
 		metas = append(metas, m)
 	}
@@ -65,13 +67,12 @@ func commentTargetSelector() node.Check {
 	return node.Or(isScript, isStylesheetLink)
 }
 
-func formatOutline(n *html.Node) JSON {
-	var data []byte
+func formatOutline(n *html.Node) *JSON {
+	var data string
 	if n == nil {
-		data = []byte("{}")
+		data = "{}"
 	} else {
-		data = node.ToBytes(n.FirstChild)
-		data = []byte("{}") // TODO: what do we need here?
+		data = n.FirstChild.Data
 	}
-	return JSON{data}
+	return &JSON{data}
 }
