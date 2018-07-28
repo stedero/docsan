@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"golang.org/x/net/html"
+	"ibfd.org/docsan/config"
 	"ibfd.org/docsan/node"
 )
 
@@ -48,13 +49,20 @@ func (j JSON) MarshalJSON() ([]byte, error) {
 }
 
 func toMetas(nodes []*html.Node) []map[string]string {
+	accept := config.MetaAccept()
 	metas := make([]map[string]string, 0, len(nodes))
 	for _, node := range nodes {
 		m := make(map[string]string)
+		name := ""
 		for _, attr := range node.Attr {
+			if attr.Key == "name" {
+				name = attr.Val
+			}
 			m[attr.Key] = html.UnescapeString(attr.Val)
 		}
-		metas = append(metas, m)
+		if name == "" || accept(name) {
+			metas = append(metas, m)
+		}
 	}
 	return metas
 }
