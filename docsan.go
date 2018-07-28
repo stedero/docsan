@@ -59,7 +59,7 @@ func process(metaAccept func(string) bool, w http.ResponseWriter, r *http.Reques
 		if err == nil {
 			jsonData, err := render.ToJSON(htmlDoc, version)
 			if err == nil {
-				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
 				w.WriteHeader(200)
 				w.Write(jsonData)
 			}
