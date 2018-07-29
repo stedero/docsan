@@ -53,14 +53,11 @@ func toMetas(nodes []*html.Node) []map[string]string {
 	metas := make([]map[string]string, 0, len(nodes))
 	for _, node := range nodes {
 		m := make(map[string]string)
-		name := ""
 		for _, attr := range node.Attr {
-			if attr.Key == "name" {
-				name = attr.Val
-			}
 			m[attr.Key] = html.UnescapeString(attr.Val)
 		}
-		if name == "" || accept(name) {
+		name, present := m["name"]
+		if !present || accept(name) {
 			metas = append(metas, m)
 		}
 	}

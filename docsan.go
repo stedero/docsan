@@ -17,20 +17,18 @@ const maxFormParseMemorySizeBytes = 10 * 1024 * 1024
 func main() {
 	server := http.Server{Addr: ":" + config.GetPort()}
 	log.Printf("docsan %s started on %s", version, server.Addr)
-	http.HandleFunc("/", handler(config.MetaAccept()))
+	http.HandleFunc("/", handle)
 	server.ListenAndServe()
 }
 
-func handler(metaAccept func(string) bool) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("method: %s: %s", r.Method, r.RequestURI)
-		switch r.Method {
-		case "GET":
-			showForm(w)
-		case "POST":
-			process(metaAccept, w, r)
-		default:
-		}
+func handle(w http.ResponseWriter, r *http.Request) {
+	log.Printf("method: %s: %s", r.Method, r.RequestURI)
+	switch r.Method {
+	case "GET":
+		showForm(w)
+	case "POST":
+		process(w, r)
+	default:
 	}
 }
 
@@ -51,7 +49,7 @@ func showForm(w http.ResponseWriter) {
 	w.Write([]byte(form))
 }
 
-func process(metaAccept func(string) bool, w http.ResponseWriter, r *http.Request) {
+func process(w http.ResponseWriter, r *http.Request) {
 	logHeaders(r)
 	reader, err := getReader(r)
 	if err == nil {
