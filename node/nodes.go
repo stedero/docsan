@@ -30,11 +30,10 @@ func (chkr *checker) check(node *html.Node) {
 }
 
 // ReplaceWithComments replaces all nodes that are accepted with comment nodes.
-// Please note that the same node is returned that was passed to this function.
+// Please note that the same node is returned that was passed to this function
+// because that node is transformed by this function.
 func ReplaceWithComments(node *html.Node, accept Check) *html.Node {
-	chkr := newChecker(accept)
-	chkr.walk(node)
-	for _, n := range chkr.nodes {
+	for _, n := range FindAll(node, accept) {
 		parent := n.Parent
 		parent.InsertBefore(toComment(n), n)
 		parent.RemoveChild(n)
@@ -95,6 +94,13 @@ func And(f1, f2 Check) Check {
 func Or(f1, f2 Check) Check {
 	return func(n *html.Node) bool {
 		return f1(n) || f2(n)
+	}
+}
+
+// Not returns a function that negates the output of the supplied function.
+func Not(f Check) Check {
+	return func(n *html.Node) bool {
+		return !f(n)
 	}
 }
 

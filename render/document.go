@@ -26,12 +26,14 @@ type document struct {
 
 // ToJSON transforms a HTML node to JSON
 func ToJSON(htmlDoc *html.Node, generated string) ([]byte, error) {
+	scriptSelector := node.Element("script")
+	outLineAttrChecker := node.Attr("id", "outline")
 	head := node.FindFirst(htmlDoc, node.Element("head"))
 	title := node.FindFirst(head, node.Element("title"))
-	outline := node.FindFirst(head, node.And(node.Element("script"), node.Attr("id", "outline")))
+	outline := node.FindFirst(head, node.And(scriptSelector, outLineAttrChecker))
 	metas := node.FindAll(head, node.Element("meta"))
 	links := node.FindAll(head, node.Element("link"))
-	scripts := node.FindAll(head, node.Element("script"))
+	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(outLineAttrChecker)))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
 	sanitizedBody := node.ReplaceWithComments(body, commentTargetSelector())
 	d := newDocument(generated, title, outline, metas, links, scripts, sanitizedBody)
