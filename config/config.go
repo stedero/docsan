@@ -22,8 +22,8 @@ func GetPort() string {
 	return port
 }
 
-// MetaAccept returns a function to filter meta tags
-func MetaAccept() func(string) bool {
+// MetaNameAccept returns a function to filter meta tags
+func MetaNameAccept() func(string) bool {
 	metas := map[string]bool{
 		"authorize_file":   true,
 		"collection":       true,

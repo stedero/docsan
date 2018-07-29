@@ -9,6 +9,9 @@ import (
 // Check defines functions for checking nodes
 type Check func(*html.Node) bool
 
+// CheckAttrs defines functions for checking node attributes
+type CheckAttrs func(attrs map[string]string) bool
+
 // checker holds nodes that are accepted by the accept function
 type checker struct {
 	accept Check
@@ -67,22 +70,15 @@ func (chkr *checker) walk(n *html.Node) {
 	}
 }
 
-// ToBytes renders a node to bytes
-func ToBytes(node *html.Node) []byte {
-	var b bytes.Buffer
-	html.Render(&b, node)
-	return b.Bytes()
-}
-
 // Content gets the first child node as an unescaped HTML string.
-func Content(node *html.Node) string {
-	return html.UnescapeString(Render(node.FirstChild))
+func Content(n *html.Node) string {
+	return html.UnescapeString(Render(n.FirstChild))
 }
 
 // Render a node to a string
-func Render(node *html.Node) string {
+func Render(n *html.Node) string {
 	var b bytes.Buffer
-	html.Render(&b, node)
+	html.Render(&b, n)
 	return b.String()
 }
 
@@ -119,4 +115,34 @@ func Attr(key, value string) Check {
 		}
 		return false
 	}
+}
+
+// ToMapArray creates an array of node attributes as a map
+func ToMapArray(nodes []*html.Node) []map[string]string {
+	return ToMapArrayFiltered(nodes, acceptAll)
+}
+
+// ToMapArrayFiltered creates a filtered array of node attributes as a map
+func ToMapArrayFiltered(nodes []*html.Node, accept CheckAttrs) []map[string]string {
+	metas := make([]map[string]string, 0, len(nodes))
+	for _, n := range nodes {
+		m := AttrsAsMap(n)
+		if accept(m) {
+			metas = append(metas, m)
+		}
+	}
+	return metas
+}
+
+// AttrsAsMap creates a map from node attributes.
+func AttrsAsMap(n *html.Node) map[string]string {
+	m := make(map[string]string)
+	for _, attr := range n.Attr {
+		m[attr.Key] = html.UnescapeString(attr.Val)
+	}
+	return m
+}
+
+func acceptAll(attrs map[string]string) bool {
+	return true
 }
