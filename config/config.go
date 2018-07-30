@@ -23,8 +23,9 @@ func GetPort() string {
 }
 
 // MetaNameAccept returns a function to filter meta tags
+// TODO: Read allowed meta tags from config file.
 func MetaNameAccept() func(string) bool {
-	metas := map[string]bool{
+	allowedMetaNames := map[string]bool{
 		"authorize_file":   true,
 		"collection":       true,
 		"pdf_chapter":      true,
@@ -32,8 +33,8 @@ func MetaNameAccept() func(string) bool {
 		"titleframe_title": true,
 		"word_chapter":     true}
 
-	return func(meta string) bool {
-		_, present := metas[meta]
+	return func(metaName string) bool {
+		_, present := allowedMetaNames[metaName]
 		return present
 	}
 
