@@ -9,6 +9,8 @@ services:
      - exposed
     ports:
      - 9997:8080
+    volumes:
+     - ${PWD}/docsan.json:/etc/docsan.json:ro
     cpu_quota: 50000
     mem_limit: '512m'
     dns:

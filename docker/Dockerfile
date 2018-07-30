@@ -3,4 +3,4 @@ LABEL maintainer Rik van den Eijnden <r.eijnden@ibfd.org>
 
 ADD docsan /usr/local/bin
 
-CMD ["/usr/local/bin/docsan"]
+CMD ["/usr/local/bin/docsan","/etc/docsan.json"]
