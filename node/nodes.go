@@ -12,20 +12,20 @@ type Check func(*html.Node) bool
 // CheckAttrs defines functions for checking node attributes
 type CheckAttrs func(attrs map[string]string) bool
 
-// checker holds nodes that are accepted by the accept function
-type checker struct {
+// collector collects nodes that are accepted by the accept function
+type collector struct {
 	accept Check
 	nodes  []*html.Node
 }
 
-func newChecker(accept Check) *checker {
-	return &checker{accept, make([]*html.Node, 0, 32)}
+func newCollector(accept Check) *collector {
+	return &collector{accept, make([]*html.Node, 0, 32)}
 }
 
 // Check determines whether a node must be accepted
-func (chkr *checker) check(node *html.Node) {
-	if chkr.accept(node) {
-		chkr.nodes = append(chkr.nodes, node)
+func (coll *collector) check(node *html.Node) {
+	if coll.accept(node) {
+		coll.nodes = append(coll.nodes, node)
 	}
 }
 
@@ -56,16 +56,16 @@ func FindFirst(n *html.Node, accept Check) *html.Node {
 
 // FindAll finds all nodes that are accepted
 func FindAll(n *html.Node, accept Check) []*html.Node {
-	chkr := newChecker(accept)
-	chkr.walk(n)
-	return chkr.nodes
+	coll := newCollector(accept)
+	coll.walk(n)
+	return coll.nodes
 }
 
 // walk the node tree
-func (chkr *checker) walk(n *html.Node) {
-	chkr.check(n)
+func (coll *collector) walk(n *html.Node) {
+	coll.check(n)
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		chkr.walk(c)
+		coll.walk(c)
 	}
 }
 
