@@ -81,6 +81,6 @@ func getReader(r *http.Request) (io.Reader, error) {
 
 func logHeaders(r *http.Request) {
 	for k, v := range r.Header {
-		fmt.Printf("key[%s] = %v\n", k, v)
+		log.Printf("key[%s] = %v\n", k, v)
 	}
 }
