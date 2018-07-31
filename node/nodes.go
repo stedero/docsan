@@ -130,14 +130,14 @@ func ToMapArray(nodes []*html.Node) []map[string]string {
 
 // ToMapArrayFiltered creates a filtered array of node attributes as a map
 func ToMapArrayFiltered(nodes []*html.Node, accept CheckAttrs) []map[string]string {
-	metas := make([]map[string]string, 0, len(nodes))
+	list := make([]map[string]string, 0, len(nodes))
 	for _, n := range nodes {
 		m := AttrsAsMap(n)
 		if accept(m) {
-			metas = append(metas, m)
+			list = append(list, m)
 		}
 	}
-	return metas
+	return list
 }
 
 // AttrsAsMap creates a map from node attributes.
