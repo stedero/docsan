@@ -28,6 +28,8 @@ type document struct {
 func ToJSON(htmlDoc *html.Node, generated string) ([]byte, error) {
 	scriptSelector := node.Element("script")
 	outLineAttrChecker := node.Attr("id", "outline")
+	anchorSelector := node.Element("a")
+	linkresolverAttrChecker := node.AttrPrefix("href", "/linkresolver")
 	head := node.FindFirst(htmlDoc, node.Element("head"))
 	title := node.FindFirst(head, node.Element("title"))
 	outline := node.FindFirst(head, node.And(scriptSelector, outLineAttrChecker))
@@ -35,8 +37,9 @@ func ToJSON(htmlDoc *html.Node, generated string) ([]byte, error) {
 	links := node.FindAll(head, node.Element("link"))
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(outLineAttrChecker)))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
-	sanitizedBody := node.ReplaceWithComments(body, commentTargetSelector())
-	d := newDocument(generated, title, outline, metas, links, scripts, sanitizedBody)
+	san1Body := node.ReplaceWithComments(body, commentTargetSelector())
+	san2Body := node.ReplaceWithContent(san1Body, node.And(anchorSelector, linkresolverAttrChecker))
+	d := newDocument(generated, title, outline, metas, links, scripts, san2Body)
 	return d.toJSON()
 }
 

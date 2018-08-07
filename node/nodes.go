@@ -2,12 +2,16 @@ package node
 
 import (
 	"bytes"
+	"strings"
 
 	"golang.org/x/net/html"
 )
 
 // Check defines functions for checking nodes
 type Check func(*html.Node) bool
+
+// Transform creates a node from a node
+type Transform func(*html.Node) *html.Node
 
 // CheckAttrs defines functions for checking node attributes
 type CheckAttrs func(attrs map[string]string) bool
@@ -33,9 +37,21 @@ func (coll *collector) check(node *html.Node) {
 // Please note that the same node is returned that was passed to this function
 // because that node is transformed by this function.
 func ReplaceWithComments(node *html.Node, accept Check) *html.Node {
+	return replace(node, accept, toComment)
+}
+
+// ReplaceWithContent replaces all nodes that are accepted with the content of that nodes.
+// Please note that the same node is returned that was passed to this function
+// because that node is transformed by this function.
+func ReplaceWithContent(node *html.Node, accept Check) *html.Node {
+	return replace(node, accept, toContent)
+}
+
+// Replace replaces every node that is accepted by a transformation of that node.
+func replace(node *html.Node, accept Check, transform Transform) *html.Node {
 	for _, n := range FindAll(node, accept) {
 		parent := n.Parent
-		parent.InsertBefore(toComment(n), n)
+		parent.InsertBefore(transform(n), n)
 		parent.RemoveChild(n)
 	}
 	return node
@@ -43,6 +59,10 @@ func ReplaceWithComments(node *html.Node, accept Check) *html.Node {
 
 func toComment(n *html.Node) *html.Node {
 	return &html.Node{Type: html.CommentNode, DataAtom: n.DataAtom, Data: Render(n)}
+}
+
+func toContent(n *html.Node) *html.Node {
+	return clone(n.FirstChild)
 }
 
 // FindFirst finds the first node that is accepted
@@ -113,9 +133,19 @@ func Element(element string) Check {
 
 // Attr returns a function that checks whether a node has a specific attribute
 func Attr(key, value string) Check {
+	return attrCheck(key, attrEqual(value))
+}
+
+// AttrPrefix returns a function that checks whether a node has an attribute value
+// with the specified prefix
+func AttrPrefix(key, prefix string) Check {
+	return attrCheck(key, attrPrefix(prefix))
+}
+
+func attrCheck(key string, accept func(string) bool) Check {
 	return func(n *html.Node) bool {
 		for _, attr := range n.Attr {
-			if attr.Key == key && attr.Val == value {
+			if attr.Key == key && accept(attr.Val) {
 				return true
 			}
 		}
@@ -151,4 +181,29 @@ func AttrsAsMap(n *html.Node) map[string]string {
 
 func acceptAll(attrs map[string]string) bool {
 	return true
+}
+
+func attrEqual(value string) func(string) bool {
+	return func(str string) bool {
+		return str == value
+	}
+}
+
+func attrPrefix(prefix string) func(string) bool {
+	return func(str string) bool {
+		return strings.HasPrefix(str, prefix)
+	}
+}
+
+// clone returns a new node with the same type, data and attributes.
+// The clone has no parent, no siblings and no children.
+func clone(n *html.Node) *html.Node {
+	m := &html.Node{
+		Type:     n.Type,
+		DataAtom: n.DataAtom,
+		Data:     n.Data,
+		Attr:     make([]html.Attribute, len(n.Attr)),
+	}
+	copy(m.Attr, n.Attr)
+	return m
 }
