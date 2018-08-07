@@ -27,9 +27,9 @@ type document struct {
 // ToJSON transforms a HTML node to JSON
 func ToJSON(htmlDoc *html.Node, generated string) ([]byte, error) {
 	scriptSelector := node.Element("script")
-	outLineAttrChecker := node.Attr("id", "outline")
+	outLineAttrChecker := node.AttrEquals("id", "outline")
 	anchorSelector := node.Element("a")
-	linkresolverAttrChecker := node.AttrPrefix("href", "/linkresolver")
+	anchorTypeSelector := node.AttrNotPrefix("href", "#")
 	head := node.FindFirst(htmlDoc, node.Element("head"))
 	title := node.FindFirst(head, node.Element("title"))
 	outline := node.FindFirst(head, node.And(scriptSelector, outLineAttrChecker))
@@ -38,7 +38,7 @@ func ToJSON(htmlDoc *html.Node, generated string) ([]byte, error) {
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(outLineAttrChecker)))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
 	san1Body := node.ReplaceWithComments(body, commentTargetSelector())
-	san2Body := node.ReplaceWithContent(san1Body, node.And(anchorSelector, linkresolverAttrChecker))
+	san2Body := node.ReplaceWithContent(san1Body, node.And(anchorSelector, anchorTypeSelector))
 	d := newDocument(generated, title, outline, metas, links, scripts, san2Body)
 	return d.toJSON()
 }
@@ -72,7 +72,7 @@ func toMetas(nodes []*html.Node) []map[string]string {
 
 func commentTargetSelector() node.Check {
 	isScript := node.Element("script")
-	isStylesheetLink := node.And(node.Element("link"), node.Attr("rel", "stylesheet"))
+	isStylesheetLink := node.And(node.Element("link"), node.AttrEquals("rel", "stylesheet"))
 	return node.Or(isScript, isStylesheetLink)
 }
 

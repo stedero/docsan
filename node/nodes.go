@@ -131,15 +131,21 @@ func Element(element string) Check {
 	}
 }
 
-// Attr returns a function that checks whether a node has a specific attribute
-func Attr(key, value string) Check {
+// AttrEquals returns a function that checks whether a node attribute has specific value
+func AttrEquals(key, value string) Check {
 	return attrCheck(key, attrEqual(value))
 }
 
-// AttrPrefix returns a function that checks whether a node has an attribute value
+// AttrPrefix returns a function that checks whether a node attribute has a value
 // with the specified prefix
 func AttrPrefix(key, prefix string) Check {
 	return attrCheck(key, attrPrefix(prefix))
+}
+
+// AttrNotPrefix returns a function that checks whether a node attribute
+// does NOT have a value with the specified prefix
+func AttrNotPrefix(key, prefix string) Check {
+	return attrCheck(key, attrNot(attrPrefix(prefix)))
 }
 
 func attrCheck(key string, accept func(string) bool) Check {
@@ -181,6 +187,12 @@ func AttrsAsMap(n *html.Node) map[string]string {
 
 func acceptAll(attrs map[string]string) bool {
 	return true
+}
+
+func attrNot(f func(string) bool) func(string) bool {
+	return func(value string) bool {
+		return !f(value)
+	}
 }
 
 func attrEqual(value string) func(string) bool {
