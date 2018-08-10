@@ -44,14 +44,14 @@ func ToJSON(htmlDoc *html.Node, generated string) ([]byte, error) {
 }
 
 // newDocument create a new document
-func newDocument(generated string, title *html.Node, outline *html.Node, metas []*html.Node, links []*html.Node, scrips []*html.Node, sanitizedBody *html.Node) *document {
+func newDocument(generated string, title *html.Node, outline *html.Node, metas []*html.Node, links []*html.Node, scripts []*html.Node, sanitizedBody *html.Node) *document {
 	return &document{
 		Generated: "docsan " + generated,
 		Title:     node.Content(title),
 		Outline:   formatOutline(outline),
 		Metas:     toMetas(metas),
 		Links:     node.ToMapArray(links),
-		Scripts:   node.ToMapArray(scrips),
+		Scripts:   node.ToMapArray(scripts),
 		Body:      node.Render(sanitizedBody)}
 }
 
