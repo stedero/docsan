@@ -1,6 +1,9 @@
 package render
 
 import (
+	"encoding/json"
+	"io"
+
 	"golang.org/x/net/html"
 	"ibfd.org/docsan/config"
 	"ibfd.org/docsan/node"
@@ -38,6 +41,13 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	san1Body := node.ReplaceWithComments(body, commentTargetSelector())
 	san2Body := node.ReplaceWithContent(san1Body, node.And(anchorSelector, anchorTypeSelector))
 	return newDocument(generated, title, outline, metas, links, scripts, san2Body)
+}
+
+// ToJSON renders a document to JSON.
+func (document *Document) ToJSON(w io.Writer) error {
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(document)
 }
 
 // newDocument create a new document

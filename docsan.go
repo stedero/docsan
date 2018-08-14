@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -57,12 +56,9 @@ func process(w http.ResponseWriter, r *http.Request) {
 		htmlDoc, err := html.Parse(reader)
 		if err == nil {
 			document := render.Transform(htmlDoc, version)
-			if err == nil {
-				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				w.WriteHeader(200)
-				encoder := json.NewEncoder(w)
-				err = encoder.Encode(document)
-			}
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(200)
+			err = document.ToJSON(w)
 		}
 	}
 	if err != nil {
