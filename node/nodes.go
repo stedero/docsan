@@ -111,9 +111,9 @@ func Content(n *html.Node) string {
 	return html.UnescapeString(RenderChildren(n))
 }
 
-// RenderChildren renders all children of a node
+// RenderChildrenCommentParent renders all children of a node
 // and renders the parent start and end tag as comment.
-func RenderChildren(n *html.Node) string {
+func RenderChildrenCommentParent(n *html.Node) string {
 	var b bytes.Buffer
 	parent := Render(toComment(Clone(n)))
 	parts := strings.SplitAfterN(parent, ">", 2)
@@ -122,6 +122,15 @@ func RenderChildren(n *html.Node) string {
 		html.Render(&b, c)
 	}
 	b.WriteString("<!--" + parts[1])
+	return b.String()
+}
+
+// RenderChildren renders all children of a node.
+func RenderChildren(n *html.Node) string {
+	var b bytes.Buffer
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		html.Render(&b, c)
+	}
 	return b.String()
 }
 
