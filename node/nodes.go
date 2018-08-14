@@ -106,9 +106,18 @@ func (coll *collector) walk(n *html.Node) {
 	}
 }
 
-// Content gets the first child node as an unescaped HTML string.
+// Content gets the childdren of a node as an unescaped HTML string.
 func Content(n *html.Node) string {
-	return html.UnescapeString(Render(n.FirstChild))
+	return html.UnescapeString(RenderChildren(n))
+}
+
+// RenderChildren renders all children of a node.
+func RenderChildren(n *html.Node) string {
+	var b bytes.Buffer
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		html.Render(&b, c)
+	}
+	return b.String()
 }
 
 // Render a node to a string

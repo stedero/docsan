@@ -59,7 +59,7 @@ func newDocument(generated string, title *html.Node, outline *html.Node, metas [
 		Metas:     toMetas(metas),
 		Links:     node.ToMapArray(links),
 		Scripts:   node.ToMapArray(scripts),
-		Body:      node.Render(sanitizedBody)}
+		Body:      node.RenderChildren(sanitizedBody)}
 }
 
 // MarshalJSON marshals a pre-rendered JSON object
