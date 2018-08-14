@@ -1,8 +1,6 @@
 package render
 
 import (
-	"encoding/json"
-
 	"golang.org/x/net/html"
 	"ibfd.org/docsan/config"
 	"ibfd.org/docsan/node"
@@ -13,8 +11,8 @@ type JSON struct {
 	json string
 }
 
-// document defines a document to render as JSON
-type document struct {
+// Document defines a document to render as JSON
+type Document struct {
 	Generated string              `json:"generated"`
 	Title     string              `json:"title"`
 	Outline   *JSON               `json:"outline"`
@@ -24,8 +22,8 @@ type document struct {
 	Body      string              `json:"body"`
 }
 
-// ToJSON transforms a HTML node to JSON
-func ToJSON(htmlDoc *html.Node, generated string) ([]byte, error) {
+// Transform transforms a HTML node to a document structure for JSON output.
+func Transform(htmlDoc *html.Node, generated string) *Document {
 	scriptSelector := node.Element("script")
 	outLineAttrChecker := node.AttrEquals("id", "outline")
 	anchorSelector := node.Element("a")
@@ -39,13 +37,12 @@ func ToJSON(htmlDoc *html.Node, generated string) ([]byte, error) {
 	body := node.FindFirst(htmlDoc, node.Element("body"))
 	san1Body := node.ReplaceWithComments(body, commentTargetSelector())
 	san2Body := node.ReplaceWithContent(san1Body, node.And(anchorSelector, anchorTypeSelector))
-	d := newDocument(generated, title, outline, metas, links, scripts, san2Body)
-	return d.toJSON()
+	return newDocument(generated, title, outline, metas, links, scripts, san2Body)
 }
 
 // newDocument create a new document
-func newDocument(generated string, title *html.Node, outline *html.Node, metas []*html.Node, links []*html.Node, scripts []*html.Node, sanitizedBody *html.Node) *document {
-	return &document{
+func newDocument(generated string, title *html.Node, outline *html.Node, metas []*html.Node, links []*html.Node, scripts []*html.Node, sanitizedBody *html.Node) *Document {
+	return &Document{
 		Generated: "docsan " + generated,
 		Title:     node.Content(title),
 		Outline:   formatOutline(outline),
@@ -53,10 +50,6 @@ func newDocument(generated string, title *html.Node, outline *html.Node, metas [
 		Links:     node.ToMapArray(links),
 		Scripts:   node.ToMapArray(scripts),
 		Body:      node.Render(sanitizedBody)}
-}
-
-func (d *document) toJSON() ([]byte, error) {
-	return json.MarshalIndent(d, "", "    ")
 }
 
 // MarshalJSON marshals a pre-rendered JSON object
