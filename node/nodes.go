@@ -57,6 +57,23 @@ func replace(node *html.Node, accept Check, transform Transform) *html.Node {
 	return node
 }
 
+// AttrToComment removes an attribute from a node and places
+// that attribute in a comment node after its parent.
+func AttrToComment(node *html.Node, key string) *html.Node {
+	for _, n := range FindAll(node, And(AnyElement(), HasAttr(key))) {
+		var found = -1
+		for ai, attr := range n.Attr {
+			if attr.Key == key {
+				found = ai
+			}
+		}
+		if found > -1 {
+			// TODO: attribute from Attr slice and create as comment node
+		}
+	}
+	return node
+}
+
 func toComment(n *html.Node) *html.Node {
 	return &html.Node{Type: html.CommentNode, DataAtom: n.DataAtom, Data: Render(n)}
 }
@@ -131,9 +148,21 @@ func Element(element string) Check {
 	}
 }
 
+// AnyElement returns a function that checks whether a node is an element node
+func AnyElement() Check {
+	return func(n *html.Node) bool {
+		return n.Type == html.ElementNode
+	}
+}
+
 // AttrEquals returns a function that checks whether a node attribute has specific value
 func AttrEquals(key, value string) Check {
 	return attrCheck(key, attrEqual(value))
+}
+
+// HasAttr returns a function that checks whether a node has a specifi attribute.
+func HasAttr(key string) Check {
+	return attrCheck(key, attrAnyValue())
 }
 
 // AttrPrefix returns a function that checks whether a node attribute has a value
@@ -198,6 +227,12 @@ func attrNot(f func(string) bool) func(string) bool {
 func attrEqual(value string) func(string) bool {
 	return func(str string) bool {
 		return str == value
+	}
+}
+
+func attrAnyValue() func(string) bool {
+	return func(str string) bool {
+		return true
 	}
 }
 
