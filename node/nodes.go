@@ -79,7 +79,7 @@ func toComment(n *html.Node) *html.Node {
 }
 
 func toContent(n *html.Node) *html.Node {
-	return clone(n.FirstChild)
+	return Clone(n.FirstChild)
 }
 
 // FindFirst finds the first node that is accepted
@@ -111,12 +111,17 @@ func Content(n *html.Node) string {
 	return html.UnescapeString(RenderChildren(n))
 }
 
-// RenderChildren renders all children of a node.
+// RenderChildren renders all children of a node
+// and renders the parent start and end tag as comment.
 func RenderChildren(n *html.Node) string {
 	var b bytes.Buffer
+	parent := Render(toComment(Clone(n)))
+	parts := strings.SplitAfterN(parent, ">", 2)
+	b.WriteString(parts[0] + "-->")
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
 		html.Render(&b, c)
 	}
+	b.WriteString("<!--" + parts[1])
 	return b.String()
 }
 
@@ -251,9 +256,9 @@ func attrPrefix(prefix string) func(string) bool {
 	}
 }
 
-// clone returns a new node with the same type, data and attributes.
+// Clone returns a new node with the same type, data and attributes.
 // The clone has no parent, no siblings and no children.
-func clone(n *html.Node) *html.Node {
+func Clone(n *html.Node) *html.Node {
 	m := &html.Node{
 		Type:     n.Type,
 		DataAtom: n.DataAtom,
