@@ -78,6 +78,7 @@ func toComment(n *html.Node) *html.Node {
 	return &html.Node{Type: html.CommentNode, DataAtom: n.DataAtom, Data: Render(n)}
 }
 
+// toContent renders the node contents assuming one child node.
 func toContent(n *html.Node) *html.Node {
 	return Clone(n.FirstChild)
 }
@@ -112,17 +113,27 @@ func Content(n *html.Node) string {
 }
 
 // RenderChildrenCommentParent renders all children of a node
-// and renders the parent start and end tag as comment.
+// and surrounds that with the parent start and end element as comment.
 func RenderChildrenCommentParent(n *html.Node) string {
 	var b bytes.Buffer
-	parent := Render(toComment(Clone(n)))
-	parts := strings.SplitAfterN(parent, ">", 2)
-	b.WriteString(parts[0] + "-->")
+	startElm, endElm := asCommentElements(n)
+	b.WriteString(startElm)
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
 		html.Render(&b, c)
 	}
-	b.WriteString("<!--" + parts[1])
+	b.WriteString(endElm)
 	return b.String()
+}
+
+// asCommentElements transforms the start and end elements of
+// a node to comment elements.
+func asCommentElements(n *html.Node) (string, string) {
+	parts := strings.SplitAfterN(Render(Clone(n)), ">", 2)
+	return asCommentElement(parts[0]), asCommentElement(parts[1])
+}
+
+func asCommentElement(str string) string {
+	return "<!--" + str + "-->"
 }
 
 // RenderChildren renders all children of a node.

@@ -57,7 +57,6 @@ func GetPort() string {
 }
 
 // MetaNameAccept returns a function to filter meta tags
-// TODO: Read allowed meta tags from config file.
 func MetaNameAccept() func(string) bool {
 	return func(metaName string) bool {
 		_, present := allowedMetaNames[metaName]
