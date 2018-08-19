@@ -68,7 +68,10 @@ func AttrToComment(node *html.Node, key string) *html.Node {
 			}
 		}
 		if found > -1 {
-			// TODO: attribute from Attr slice and create as comment node
+			// attr := n.Attr[found]
+			n.Attr = append(n.Attr[:found], n.Attr[found+1:]...)
+			// TODO: create deleted attribute as comment node
+
 		}
 	}
 	return node
