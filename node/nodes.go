@@ -57,9 +57,9 @@ func replace(node *html.Node, accept Check, transform Transform) *html.Node {
 	return node
 }
 
-// AttrToComment removes an attribute from a node and places
-// that attribute in a comment node after its parent.
-func AttrToComment(node *html.Node, key string) *html.Node {
+// DisableAttribute prefixes an attribute key with 'xxx' to disable it.
+// To be used for JavaScript events such as 'onclick'.
+func DisableAttribute(node *html.Node, key string) *html.Node {
 	for _, n := range FindAll(node, And(AnyElement(), HasAttr(key))) {
 		var found = -1
 		for ai, attr := range n.Attr {
@@ -68,10 +68,7 @@ func AttrToComment(node *html.Node, key string) *html.Node {
 			}
 		}
 		if found > -1 {
-			// attr := n.Attr[found]
-			n.Attr = append(n.Attr[:found], n.Attr[found+1:]...)
-			// TODO: create deleted attribute as comment node
-
+			n.Attr[found].Key = "xxx" + n.Attr[found].Key
 		}
 	}
 	return node

@@ -40,7 +40,8 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	body := node.FindFirst(htmlDoc, node.Element("body"))
 	san1Body := node.ReplaceWithComments(body, commentTargetSelector())
 	san2Body := node.ReplaceWithContent(san1Body, node.And(anchorSelector, anchorTypeSelector))
-	return newDocument(generated, title, outline, metas, links, scripts, san2Body)
+	san3Body := node.DisableAttribute(san2Body, "onclick")
+	return newDocument(generated, title, outline, metas, links, scripts, san3Body)
 }
 
 // ToJSON renders a document to JSON.
