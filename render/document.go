@@ -33,7 +33,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	anchorTypeSelector := node.AttrNotPrefix("href", "#")
 	head := node.FindFirst(htmlDoc, node.Element("head"))
 	title := node.FindFirst(head, node.Element("title"))
-	jsonOutline := formatOutline(node.FindFirst(head, node.And(scriptSelector, outLineAttrChecker)))
+	jsonOutline := formatOutline(node.FindFirst(htmlDoc, node.And(scriptSelector, outLineAttrChecker)))
 	metas := node.FindAll(head, node.Element("meta"))
 	links := node.FindAll(head, node.Element("link"))
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(outLineAttrChecker)))
