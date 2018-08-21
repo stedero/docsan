@@ -33,7 +33,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	anchorTypeSelector := node.AttrNotPrefix("href", "#")
 	head := node.FindFirst(htmlDoc, node.Element("head"))
 	title := node.FindFirst(head, node.Element("title"))
-	outline := node.FindFirst(head, node.And(scriptSelector, outLineAttrChecker))
+	jsonOutline := formatOutline(node.FindFirst(head, node.And(scriptSelector, outLineAttrChecker)))
 	metas := node.FindAll(head, node.Element("meta"))
 	links := node.FindAll(head, node.Element("link"))
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(outLineAttrChecker)))
@@ -41,7 +41,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	san1Body := node.ReplaceWithComments(body, commentTargetSelector())
 	san2Body := node.ReplaceWithContent(san1Body, node.And(anchorSelector, anchorTypeSelector))
 	san3Body := node.DisableAttribute(san2Body, "onclick")
-	return newDocument(generated, title, outline, metas, links, scripts, san3Body)
+	return newDocument(generated, title, jsonOutline, metas, links, scripts, san3Body)
 }
 
 // ToJSON renders a document to JSON.
@@ -52,11 +52,11 @@ func (document *Document) ToJSON(w io.Writer) error {
 }
 
 // newDocument create a new document
-func newDocument(generated string, title *html.Node, outline *html.Node, metas []*html.Node, links []*html.Node, scripts []*html.Node, sanitizedBody *html.Node) *Document {
+func newDocument(generated string, title *html.Node, jsonOutline *JSON, metas []*html.Node, links []*html.Node, scripts []*html.Node, sanitizedBody *html.Node) *Document {
 	return &Document{
 		Generated: "docsan " + generated,
 		Title:     node.Content(title),
-		Outline:   formatOutline(outline),
+		Outline:   jsonOutline,
 		Metas:     toMetas(metas),
 		Links:     node.ToMapArray(links),
 		Scripts:   node.ToMapArray(scripts),
