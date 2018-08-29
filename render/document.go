@@ -29,8 +29,6 @@ type Document struct {
 func Transform(htmlDoc *html.Node, generated string) *Document {
 	scriptSelector := node.Element("script")
 	outLineAttrChecker := node.AttrEquals("id", "outline")
-	anchorSelector := node.Element("a")
-	anchorTypeSelector := node.AttrNotPrefix("href", "#")
 	head := node.FindFirst(htmlDoc, node.Element("head"))
 	title := node.FindFirst(head, node.Element("title"))
 	jsonOutline := formatOutline(node.FindFirst(htmlDoc, node.And(scriptSelector, outLineAttrChecker)))
@@ -39,7 +37,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(outLineAttrChecker)))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
 	san1Body := node.ReplaceWithComments(body, commentTargetSelector())
-	san2Body := node.ReplaceWithContent(san1Body, node.And(anchorSelector, anchorTypeSelector))
+	san2Body := node.ReplaceWithContent(san1Body, notInternalLinkSelector())
 	san3Body := node.DisableAttribute(san2Body, "onclick")
 	return newDocument(generated, title, jsonOutline, metas, links, scripts, san3Body)
 }
@@ -78,6 +76,12 @@ func commentTargetSelector() node.Check {
 	isScript := node.Element("script")
 	isStylesheetLink := node.And(node.Element("link"), node.AttrEquals("rel", "stylesheet"))
 	return node.Or(isScript, isStylesheetLink)
+}
+
+func notInternalLinkSelector() node.Check {
+	anchorSelector := node.Element("a")
+	anchorTypeSelector := node.AttrNotPrefix("href", "#")
+	return node.And(anchorSelector, anchorTypeSelector)
 }
 
 func metaAccept(acceptMetaName func(string) bool) node.CheckAttrs {
