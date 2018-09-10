@@ -2,6 +2,7 @@ package node
 
 import (
 	"bytes"
+	"io"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -118,9 +119,7 @@ func RenderChildrenCommentParent(n *html.Node) string {
 	var b bytes.Buffer
 	startElm, endElm := asCommentElements(n)
 	b.WriteString(startElm)
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		html.Render(&b, c)
-	}
+	renderChildren(&b, n)
 	b.WriteString(endElm)
 	return b.String()
 }
@@ -136,12 +135,10 @@ func asCommentElement(str string) string {
 	return "<!--" + str + "-->"
 }
 
-// RenderChildren renders all children of a node.
+// RenderChildren renders all children of a node to a string.
 func RenderChildren(n *html.Node) string {
 	var b bytes.Buffer
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		html.Render(&b, c)
-	}
+	renderChildren(&b, n)
 	return b.String()
 }
 
@@ -150,6 +147,13 @@ func Render(n *html.Node) string {
 	var b bytes.Buffer
 	html.Render(&b, n)
 	return b.String()
+}
+
+// renderChildren renders all children of a node.
+func renderChildren(w io.Writer, n *html.Node) {
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		html.Render(w, c)
+	}
 }
 
 // And returns a function that applies a logical AND operation
