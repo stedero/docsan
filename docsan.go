@@ -3,26 +3,27 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
+	"runtime/debug"
 	"strings"
 
 	"golang.org/x/net/html"
 	"ibfd.org/docsan/config"
+	log "ibfd.org/docsan/log4u"
 	"ibfd.org/docsan/render"
 )
 
 const maxFormParseMemorySizeBytes = 10 * 1024 * 1024
 
 func main() {
+	defer config.CloseLog()
 	server := http.Server{Addr: ":" + config.GetPort()}
-	log.Printf("docsan %s started on %s", version, server.Addr)
+	log.Infof("docsan %s started on %s", version, server.Addr)
 	http.HandleFunc("/", handle)
 	server.ListenAndServe()
 }
 
 func handle(w http.ResponseWriter, r *http.Request) {
-	log.Printf("method: %s: %s", r.Method, r.RequestURI)
 	switch r.Method {
 	case "GET":
 		showForm(w)
@@ -50,7 +51,7 @@ func showForm(w http.ResponseWriter) {
 }
 
 func process(w http.ResponseWriter, r *http.Request) {
-	logHeaders(r)
+	defer serverError(w, r)
 	reader, err := getReader(r)
 	if err == nil {
 		htmlDoc, err := html.Parse(reader)
@@ -62,8 +63,10 @@ func process(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if err != nil {
+		msg := fmt.Sprintf("failed to sanitize: %v", err)
+		log.Errorf(msg)
 		w.WriteHeader(500)
-		w.Write([]byte(fmt.Sprintf("failed to sanitize: %v", err)))
+		w.Write([]byte(msg))
 	}
 }
 
@@ -79,6 +82,18 @@ func getReader(r *http.Request) (io.Reader, error) {
 
 func logHeaders(r *http.Request) {
 	for k, v := range r.Header {
-		log.Printf("key[%s] = %v\n", k, v)
+		log.Debugf("key[%s] = %v\n", k, v)
+	}
+}
+
+// ServerError maps errors to internal server errors.
+func serverError(w http.ResponseWriter, rec *http.Request) {
+	if r := recover(); r != nil {
+		msg := fmt.Sprintf("%v", r)
+		log.Error(msg)
+		debug.PrintStack()
+		w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(msg))
 	}
 }

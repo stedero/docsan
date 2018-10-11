@@ -11,7 +11,8 @@ import (
 // Check defines functions for checking nodes
 type Check func(*html.Node) bool
 
-// Transform creates a node from a node
+// Transform creates a node from a node if the transformation
+// cannot be performed then nil must be returned.
 type Transform func(*html.Node) *html.Node
 
 // CheckAttrs defines functions for checking node attributes
@@ -52,8 +53,11 @@ func ReplaceWithContent(node *html.Node, accept Check) *html.Node {
 func replace(node *html.Node, accept Check, transform Transform) *html.Node {
 	for _, n := range FindAll(node, accept) {
 		parent := n.Parent
-		parent.InsertBefore(transform(n), n)
-		parent.RemoveChild(n)
+		result := transform(n)
+		if result != nil {
+			parent.InsertBefore(result, n)
+			parent.RemoveChild(n)
+		}
 	}
 	return node
 }
@@ -81,7 +85,10 @@ func toComment(n *html.Node) *html.Node {
 
 // toContent renders the node contents assuming one child node.
 func toContent(n *html.Node) *html.Node {
-	return Clone(n.FirstChild)
+	if n.FirstChild != nil {
+		return Clone(n.FirstChild)
+	}
+	return nil
 }
 
 // FindFirst finds the first node that is accepted

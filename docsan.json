@@ -1,11 +1,19 @@
 {
     "comment": "__CONMAN_HEADER__",
+    "logging": {
+        "filename": "./docsan.log",
+        "level": "DEBUG"
+    },
     "meta_tags": [
-        "authorize_file",
+        "citation",
         "collection",
+        "cc",
+        "docid",
+        "excel_version",
         "pdf_chapter",
+        "pdf_document",
         "print_version",
-        "titleframe_title",
-        "word_chapter"
+        "word_chapter",
+        "xml_source_file"
     ]
 }
