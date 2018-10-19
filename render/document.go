@@ -37,8 +37,8 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(outLineAttrChecker)))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
 	san1Body := node.ReplaceWithComments(body, commentTargetSelector())
-	san2Body := node.ReplaceWithContent(san1Body, notInternalLinkSelector())
-	san3Body := node.DisableAttribute(san2Body, "onclick")
+	// san2Body := node.ReplaceWithContent(san1Body, notInternalLinkSelector())
+	san3Body := node.DisableAttribute(san1Body, "onclick")
 	return newDocument(generated, title, jsonOutline, metas, links, scripts, san3Body)
 }
 
