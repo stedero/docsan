@@ -163,19 +163,29 @@ func renderChildren(w io.Writer, n *html.Node) {
 	}
 }
 
-// And returns a function that applies a logical AND operation
-// to the results of two functions
-func And(f1, f2 Check) Check {
+// And returns a function that applies a logical AND operation to
+// the results of all supplied functions.
+func And(checks ...Check) Check {
 	return func(n *html.Node) bool {
-		return f1(n) && f2(n)
+		for _, chk := range checks {
+			if !chk(n) {
+				return false
+			}
+		}
+		return true
 	}
 }
 
-// Or returns a function that applies a logical OR operation
-// to the results of two functions
-func Or(f1, f2 Check) Check {
+// Or returns a function that applies a logical OR operation to
+// the results of all supplied functions.
+func Or(checks ...Check) Check {
 	return func(n *html.Node) bool {
-		return f1(n) || f2(n)
+		for _, chk := range checks {
+			if chk(n) {
+				return true
+			}
+		}
+		return false
 	}
 }
 

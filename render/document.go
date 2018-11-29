@@ -75,7 +75,8 @@ func toMetas(nodes []*html.Node) []map[string]string {
 func commentTargetSelector() node.Check {
 	isScript := node.Element("script")
 	isStylesheetLink := node.And(node.Element("link"), node.AttrEquals("rel", "stylesheet"))
-	return node.Or(isScript, isStylesheetLink)
+	isCompareParagraph := node.And(node.Element("p"), node.AttrEquals("class", "compare-to"))
+	return node.Or(isScript, isStylesheetLink, isCompareParagraph)
 }
 
 func notInternalLinkSelector() node.Check {
