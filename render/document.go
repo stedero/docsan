@@ -36,9 +36,9 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	links := node.FindAll(head, node.Element("link"))
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(outLineAttrChecker)))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
-	san1Body := node.ReplaceWithComments(body, commentTargetSelector())
-	// san2Body := node.ReplaceWithContent(san1Body, notInternalLinkSelector())
-	san3Body := node.DisableAttribute(san1Body, "onclick")
+	san1Body := node.AddActionBarDivs(body, actionBarTargetSelector())
+	san2Body := node.ReplaceWithComments(san1Body, commentTargetSelector())
+	san3Body := node.DisableAttribute(san2Body, "onclick")
 	return newDocument(generated, title, jsonOutline, metas, links, scripts, san3Body)
 }
 
@@ -77,6 +77,12 @@ func commentTargetSelector() node.Check {
 	isStylesheetLink := node.And(node.Element("link"), node.AttrEquals("rel", "stylesheet"))
 	isCompareParagraph := node.And(node.Element("p"), node.AttrEquals("class", "compare-to"))
 	return node.Or(isScript, isStylesheetLink, isCompareParagraph)
+}
+
+func actionBarTargetSelector() node.Check {
+	hasAnnotatableClass := node.AttrEquals("class", "annotatable")
+	hasID := node.HasAttr("id")
+	return node.And(node.AnyElement(), hasAnnotatableClass, hasID)
 }
 
 func notInternalLinkSelector() node.Check {

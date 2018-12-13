@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"golang.org/x/net/html"
+	a "golang.org/x/net/html/atom"
 )
 
 // Check defines functions for checking nodes
@@ -89,6 +90,24 @@ func toContent(n *html.Node) *html.Node {
 		return Clone(n.FirstChild)
 	}
 	return nil
+}
+
+// AddActionBarDivs add placeholders for the action bars
+func AddActionBarDivs(node *html.Node, accept Check) *html.Node {
+	for _, n := range FindAll(node, accept) {
+		attrMap := AttrsAsMap(n)
+		id, _ := attrMap["id"]
+		attr := html.Attribute{Key: "id", Val: "actionbar_" + id}
+		attrs := []html.Attribute{attr}
+		div := &html.Node{
+			Type:     html.ElementNode,
+			DataAtom: a.Div,
+			Data:     a.Div.String(),
+			Attr:     attrs,
+		}
+		n.Parent.InsertBefore(div, n)
+	}
+	return node
 }
 
 // FindFirst finds the first node that is accepted
@@ -215,7 +234,7 @@ func AttrEquals(key, value string) Check {
 	return attrCheck(key, attrEqual(value))
 }
 
-// HasAttr returns a function that checks whether a node has a specifi attribute.
+// HasAttr returns a function that checks whether a node has a specific attribute.
 func HasAttr(key string) Check {
 	return attrCheck(key, attrAnyValue())
 }
