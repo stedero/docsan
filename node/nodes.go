@@ -105,7 +105,7 @@ func AddActionBarDivs(node *html.Node, accept Check) *html.Node {
 			Data:     a.Div.String(),
 			Attr:     attrs,
 		}
-		n.Parent.InsertBefore(div, n)
+		n.InsertBefore(div, n.FirstChild)
 	}
 	return node
 }
