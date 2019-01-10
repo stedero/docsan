@@ -41,7 +41,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	body := node.FindFirst(htmlDoc, node.Element("body"))
 	san1Body := node.AddActionBarDivs(body, actionBarTargetSelector())
 	san2Body := node.ReplaceWithComments(san1Body, commentTargetSelector())
-	san3Body := node.DisableAttribute(san2Body, "onclick")
+	san3Body := node.DisableAttribute(san2Body, "onclick", disableAtributeSelector())
 	return newDocument(generated, title, jsonOutline, jsonSumtab, metas, links, scripts, san3Body)
 }
 
@@ -77,7 +77,7 @@ func toMetas(nodes []*html.Node) []map[string]string {
 }
 
 func commentTargetSelector() node.Check {
-	isScript := node.Element("script")
+	isScript := node.And(node.Element("script"), node.Not(node.AttrEquals("src", "/js/dyncalsepfor.js")))
 	isStylesheetLink := node.And(node.Element("link"), node.AttrEquals("rel", "stylesheet"))
 	isCompareParagraph := node.And(node.Element("p"), node.AttrEquals("class", "compare-to"))
 	return node.Or(isScript, isStylesheetLink, isCompareParagraph)
@@ -93,6 +93,10 @@ func notInternalLinkSelector() node.Check {
 	anchorSelector := node.Element("a")
 	anchorTypeSelector := node.AttrNotPrefix("href", "#")
 	return node.And(anchorSelector, anchorTypeSelector)
+}
+
+func disableAtributeSelector() node.Check {
+	return node.And(node.AnyElement(), node.HasAttr("onclick"), node.Not(node.AttrEquals("class", "dyncal-button")))
 }
 
 func metaAccept(acceptMetaName func(string) bool) node.CheckAttrs {

@@ -65,8 +65,8 @@ func replace(node *html.Node, accept Check, transform Transform) *html.Node {
 
 // DisableAttribute prefixes an attribute key with 'xxx' to disable it.
 // To be used for JavaScript events such as 'onclick'.
-func DisableAttribute(node *html.Node, key string) *html.Node {
-	for _, n := range FindAll(node, And(AnyElement(), HasAttr(key))) {
+func DisableAttribute(node *html.Node, key string, accept Check) *html.Node {
+	for _, n := range FindAll(node, accept) {
 		var found = -1
 		for ai, attr := range n.Attr {
 			if attr.Key == key {
