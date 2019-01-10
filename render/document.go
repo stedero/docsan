@@ -77,7 +77,7 @@ func toMetas(nodes []*html.Node) []map[string]string {
 }
 
 func commentTargetSelector() node.Check {
-	isScript := node.And(node.Element("script"), node.Not(node.AttrEquals("src", "/js/dyncalsepfor.js")))
+	isScript := node.Element("script")
 	isStylesheetLink := node.And(node.Element("link"), node.AttrEquals("rel", "stylesheet"))
 	isCompareParagraph := node.And(node.Element("p"), node.AttrEquals("class", "compare-to"))
 	return node.Or(isScript, isStylesheetLink, isCompareParagraph)
