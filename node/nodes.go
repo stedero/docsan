@@ -30,6 +30,7 @@ func newCollector(accept Check) *collector {
 }
 
 // Check determines whether a node must be accepted
+// and adds it to this collector if so.
 func (coll *collector) check(node *html.Node) {
 	if coll.accept(node) {
 		coll.nodes = append(coll.nodes, node)
@@ -37,15 +38,15 @@ func (coll *collector) check(node *html.Node) {
 }
 
 // ReplaceWithComments replaces all nodes that are accepted with comment nodes.
-// Please note that the same node is returned that was passed to this function
-// because that node is transformed by this function.
+// The same node that is passed to this function is also returned
+// because it is transformed in place.
 func ReplaceWithComments(node *html.Node, accept Check) *html.Node {
 	return replace(node, accept, toComment)
 }
 
 // ReplaceWithContent replaces all nodes that are accepted with the content of that nodes.
-// Please note that the same node is returned that was passed to this function
-// because that node is transformed by this function.
+// The same node that is passed to this function is also returned
+// because it is transformed in place.
 func ReplaceWithContent(node *html.Node, accept Check) *html.Node {
 	return replace(node, accept, toContent)
 }
