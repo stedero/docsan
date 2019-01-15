@@ -83,7 +83,7 @@ func commentTargetSelector() node.Check {
 	return node.Or(isScript, isStylesheetLink, isCompareParagraph)
 }
 
-func actionBarTargetSelector() node.Check {
+func noticePlaceholderTargetSelector() node.Check {
 	hasAnnotatableClass := node.AttrEquals("class", "annotatable")
 	hasID := node.HasAttr("id")
 	return node.And(node.AnyElement(), hasAnnotatableClass, hasID)
@@ -104,7 +104,7 @@ func disableAtributeSelector() node.Check {
 func addNoticePlaceholdersIfNeeded(body *html.Node) *html.Node {
 	noticePlaceholders := node.FindFirst(body, noticePlaceholder())
 	if noticePlaceholders == nil {
-		return node.AddActionBarDivs(body, actionBarTargetSelector())
+		return node.AddNoticePlaceholders(body, noticePlaceholderTargetSelector())
 	}
 	return body
 }

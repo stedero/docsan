@@ -93,12 +93,12 @@ func toContent(n *html.Node) *html.Node {
 	return nil
 }
 
-// AddActionBarDivs add placeholders for the action bars
-func AddActionBarDivs(node *html.Node, accept Check) *html.Node {
+// AddNoticePlaceholders add placeholders for the action bars
+func AddNoticePlaceholders(node *html.Node, accept Check) *html.Node {
 	for _, n := range FindAll(node, accept) {
 		attrMap := AttrsAsMap(n)
 		id, _ := attrMap["id"]
-		attr := html.Attribute{Key: "id", Val: "actionbar_" + id}
+		attr := html.Attribute{Key: "id", Val: "notice_" + id}
 		attrs := []html.Attribute{attr}
 		div := &html.Node{
 			Type:     html.ElementNode,
