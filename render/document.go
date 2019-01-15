@@ -96,7 +96,9 @@ func notInternalLinkSelector() node.Check {
 }
 
 func disableAtributeSelector() node.Check {
-	return node.And(node.AnyElement(), node.HasAttr("onclick"), node.Not(node.AttrEquals("class", "dyncal-button")))
+	clickEevents := node.HasAttr("onclick")
+	simultaxButton := node.AttrEquals("class", "dyncal-button")
+	return node.And(node.AnyElement(), clickEevents, node.Not(simultaxButton))
 }
 
 func metaAccept(acceptMetaName func(string) bool) node.CheckAttrs {
