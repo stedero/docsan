@@ -39,7 +39,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	links := node.FindAll(head, node.Element("link"))
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(node.Or(outLineAttrChecker, sumtabAttrChecker))))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
-	san1Body := node.AddActionBarDivs(body, actionBarTargetSelector())
+	san1Body := addNoticePlaceholdersIfNeeded(body)
 	san2Body := node.ReplaceWithComments(san1Body, commentTargetSelector())
 	san3Body := node.DisableAttribute(san2Body, "onclick", disableAtributeSelector())
 	return newDocument(generated, title, jsonOutline, jsonSumtab, metas, links, scripts, san3Body)
@@ -99,6 +99,20 @@ func disableAtributeSelector() node.Check {
 	clickEvents := node.HasAttr("onclick")
 	simultaxButton := node.AttrEquals("class", "dyncal-button")
 	return node.And(node.AnyElement(), clickEvents, node.Not(simultaxButton))
+}
+
+func addNoticePlaceholdersIfNeeded(body *html.Node) *html.Node {
+	noticePlaceholders := node.FindFirst(body, noticePlaceholder())
+	if noticePlaceholders == nil {
+		return node.AddActionBarDivs(body, actionBarTargetSelector())
+	}
+	return body
+}
+
+func noticePlaceholder() node.Check {
+	isDiv := node.Element("div")
+	isNoticePlaceholder := node.AttrPrefix("id", "notice_")
+	return node.And(isDiv, isNoticePlaceholder)
 }
 
 func metaAccept(acceptMetaName func(string) bool) node.CheckAttrs {
