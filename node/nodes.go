@@ -98,8 +98,9 @@ func AddNoticePlaceholders(node *html.Node, accept Check) *html.Node {
 	for _, n := range FindAll(node, accept) {
 		attrMap := AttrsAsMap(n)
 		id, _ := attrMap["id"]
-		attr := html.Attribute{Key: "id", Val: "notice_" + id}
-		attrs := []html.Attribute{attr}
+		attr1 := html.Attribute{Key: "id", Val: "notice_" + id}
+		attr2 := html.Attribute{Key: "data-generator", Val: "docsan"}
+		attrs := []html.Attribute{attr1, attr2}
 		div := &html.Node{
 			Type:     html.ElementNode,
 			DataAtom: a.Div,
