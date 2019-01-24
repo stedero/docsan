@@ -40,9 +40,10 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(node.Or(outLineAttrChecker, sumtabAttrChecker))))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
 	san1Body := addNoticePlaceholdersIfNeeded(body)
-	san2Body := node.ReplaceWithComments(san1Body, commentTargetSelector())
-	san3Body := node.DisableAttribute(san2Body, "onclick", disableAtributeSelector())
-	return newDocument(generated, title, jsonOutline, jsonSumtab, metas, links, scripts, san3Body)
+	san2Body := addSeeAlsoPlaceholdersIfNeeded(san1Body)
+	san3Body := node.ReplaceWithComments(san2Body, commentTargetSelector())
+	san4Body := node.DisableAttribute(san3Body, "onclick", disableAtributeSelector())
+	return newDocument(generated, title, jsonOutline, jsonSumtab, metas, links, scripts, san4Body)
 }
 
 // ToJSON renders a document to JSON.
@@ -79,14 +80,8 @@ func toMetas(nodes []*html.Node) []map[string]string {
 func commentTargetSelector() node.Check {
 	isScript := node.Element("script")
 	isStylesheetLink := node.And(node.Element("link"), node.AttrEquals("rel", "stylesheet"))
-	isCompareParagraph := node.And(node.Element("p"), node.AttrEquals("class", "compare-to"))
+	isCompareParagraph := node.And(node.Element("p"), node.AttrContains("class", "compare-to"))
 	return node.Or(isScript, isStylesheetLink, isCompareParagraph)
-}
-
-func noticePlaceholderTargetSelector() node.Check {
-	hasAnnotatableClass := node.AttrEquals("class", "annotatable")
-	hasID := node.HasAttr("id")
-	return node.And(node.AnyElement(), hasAnnotatableClass, hasID)
 }
 
 func notInternalLinkSelector() node.Check {
@@ -97,21 +92,41 @@ func notInternalLinkSelector() node.Check {
 
 func disableAtributeSelector() node.Check {
 	clickEvents := node.HasAttr("onclick")
-	simultaxButton := node.AttrEquals("class", "dyncal-button")
+	simultaxButton := node.AttrContains("class", "dyncal-button")
 	return node.And(node.AnyElement(), clickEvents, node.Not(simultaxButton))
 }
 
 func addNoticePlaceholdersIfNeeded(body *html.Node) *html.Node {
 	noticePlaceholders := node.FindFirst(body, noticePlaceholder())
 	if noticePlaceholders == nil {
-		return node.AddNoticePlaceholders(body, noticePlaceholderTargetSelector())
+		return node.AddNoticePlaceholders(body, placeholderTargetSelector())
 	}
 	return body
+}
+
+func addSeeAlsoPlaceholdersIfNeeded(body *html.Node) *html.Node {
+	seeAlsoPlaceholders := node.FindFirst(body, seeAlsoPlaceholder())
+	if seeAlsoPlaceholders == nil {
+		return node.AddSeeAlsoPlaceholders(body, placeholderTargetSelector())
+	}
+	return body
+}
+
+func placeholderTargetSelector() node.Check {
+	hasAnnotatableClass := node.AttrContains("class", "annotatable")
+	hasID := node.HasAttr("id")
+	return node.And(node.AnyElement(), hasAnnotatableClass, hasID)
 }
 
 func noticePlaceholder() node.Check {
 	isDiv := node.Element("div")
 	isNoticePlaceholder := node.AttrPrefix("id", "notice_")
+	return node.And(isDiv, isNoticePlaceholder)
+}
+
+func seeAlsoPlaceholder() node.Check {
+	isDiv := node.Element("div")
+	isNoticePlaceholder := node.AttrPrefix("id", "seealso_")
 	return node.And(isDiv, isNoticePlaceholder)
 }
 

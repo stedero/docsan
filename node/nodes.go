@@ -99,8 +99,9 @@ func AddNoticePlaceholders(node *html.Node, accept Check) *html.Node {
 		attrMap := AttrsAsMap(n)
 		id, _ := attrMap["id"]
 		attr1 := html.Attribute{Key: "id", Val: "notice_" + id}
-		attr2 := html.Attribute{Key: "data-generator", Val: "docsan"}
-		attrs := []html.Attribute{attr1, attr2}
+		attr2 := html.Attribute{Key: "class", Val: "ib-notice"}
+		attr3 := html.Attribute{Key: "data-generator", Val: "docsan"}
+		attrs := []html.Attribute{attr1, attr2, attr3}
 		div := &html.Node{
 			Type:     html.ElementNode,
 			DataAtom: a.Div,
@@ -108,6 +109,26 @@ func AddNoticePlaceholders(node *html.Node, accept Check) *html.Node {
 			Attr:     attrs,
 		}
 		n.InsertBefore(div, n.FirstChild)
+	}
+	return node
+}
+
+// AddSeeAlsoPlaceholders add placeholders for the see also sections.
+func AddSeeAlsoPlaceholders(node *html.Node, accept Check) *html.Node {
+	for _, n := range FindAll(node, accept) {
+		attrMap := AttrsAsMap(n)
+		id, _ := attrMap["id"]
+		attr1 := html.Attribute{Key: "id", Val: "seealso_" + id}
+		attr2 := html.Attribute{Key: "class", Val: "ib-seealso"}
+		attr3 := html.Attribute{Key: "data-generator", Val: "docsan"}
+		attrs := []html.Attribute{attr1, attr2, attr3}
+		div := &html.Node{
+			Type:     html.ElementNode,
+			DataAtom: a.Div,
+			Data:     a.Div.String(),
+			Attr:     attrs,
+		}
+		n.AppendChild(div)
 	}
 	return node
 }
@@ -247,6 +268,12 @@ func AttrPrefix(key, prefix string) Check {
 	return attrCheck(key, attrPrefix(prefix))
 }
 
+// AttrContains returns a function that checks whether a node attribute contains a substring
+// with the specified prefix
+func AttrContains(key, substr string) Check {
+	return attrCheck(key, attrContains(substr))
+}
+
 // AttrNotPrefix returns a function that checks whether a node attribute
 // does NOT have a value with the specified prefix
 func AttrNotPrefix(key, prefix string) Check {
@@ -303,6 +330,12 @@ func attrNot(f func(string) bool) func(string) bool {
 func attrEqual(value string) func(string) bool {
 	return func(str string) bool {
 		return str == value
+	}
+}
+
+func attrContains(value string) func(string) bool {
+	return func(str string) bool {
+		return strings.Contains(str, value)
 	}
 }
 
