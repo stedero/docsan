@@ -2,19 +2,20 @@ include /usr/local/IBFD/etc/docker.env
 include version.env
 
 PROJECT=docsan
+FILES=-f docker-compose.yml -f local-compose.yml
 
 silentstart:
-	@docker-compose pull 2>/dev/null >/dev/null && docker-compose -p${PROJECT} up -d 2>/dev/null >/dev/null
+	@docker-compose ${FILES} pull 2>/dev/null >/dev/null && docker-compose ${FILES} -p${PROJECT} up -d 2>/dev/null >/dev/null
 
 silentstop:
-	@docker-compose -p${PROJECT} down 2>/dev/null >/dev/null
+	@docker-compose ${FILES} -p${PROJECT} down 2>/dev/null >/dev/null
 
 start:
-	docker-compose -p${PROJECT} up -d
+	docker-compose ${FILES} -p${PROJECT} up -d
 
 stop:
-	docker-compose -p${PROJECT} down
+	docker-compose ${FILES} -p${PROJECT} down
 
 refresh:
-	docker-compose pull 
+	docker-compose ${FILES} pull 
 
