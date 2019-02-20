@@ -136,7 +136,7 @@ func AddSeeAlsoPlaceholders(node *html.Node, accept Check) *html.Node {
 // WrapTables wraps nodes in a div
 func WrapTables(node *html.Node, accept Check) *html.Node {
 	for _, n := range FindAll(node, accept) {
-		attr1 := html.Attribute{Key: "class", Val: "ib-tablewrapper"}
+		attr1 := html.Attribute{Key: "class", Val: "ib-table-wrapper"}
 		attrs := []html.Attribute{attr1}
 		div := &html.Node{
 			Type:     html.ElementNode,
