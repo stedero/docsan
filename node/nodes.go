@@ -88,7 +88,7 @@ func toComment(n *html.Node) *html.Node {
 // toContent renders the node contents assuming one child node.
 func toContent(n *html.Node) *html.Node {
 	if n.FirstChild != nil {
-		return Clone(n.FirstChild)
+		return clone(n.FirstChild)
 	}
 	return nil
 }
@@ -129,6 +129,24 @@ func AddSeeAlsoPlaceholders(node *html.Node, accept Check) *html.Node {
 			Attr:     attrs,
 		}
 		n.AppendChild(div)
+	}
+	return node
+}
+
+// WrapTables wraps nodes in a div
+func WrapTables(node *html.Node, accept Check) *html.Node {
+	for _, n := range FindAll(node, accept) {
+		attr1 := html.Attribute{Key: "class", Val: "ib-tablewrapper"}
+		attrs := []html.Attribute{attr1}
+		div := &html.Node{
+			Type:     html.ElementNode,
+			DataAtom: a.Div,
+			Data:     a.Div.String(),
+			Attr:     attrs,
+		}
+		parent := n.Parent
+		parent.InsertBefore(div, n)
+		move(div, n)
 	}
 	return node
 }
@@ -176,7 +194,7 @@ func RenderChildrenCommentParent(n *html.Node) string {
 // asCommentElements transforms the start and end elements of
 // a node to comment elements.
 func asCommentElements(n *html.Node) (string, string) {
-	parts := strings.SplitAfterN(Render(Clone(n)), ">", 2)
+	parts := strings.SplitAfterN(Render(clone(n)), ">", 2)
 	return asCommentElement(parts[0]), asCommentElement(parts[1])
 }
 
@@ -351,9 +369,18 @@ func attrPrefix(prefix string) func(string) bool {
 	}
 }
 
-// Clone returns a new node with the same type, data and attributes.
+// move appends a node to another parent and removes it from the current parent.
+func move(dst *html.Node, c *html.Node) {
+	parent := c.Parent
+	n := clone(c)
+	reparentChildren(n, c)
+	parent.RemoveChild(c)
+	dst.AppendChild(n)
+}
+
+// clone returns a new node with the same type, data and attributes.
 // The clone has no parent, no siblings and no children.
-func Clone(n *html.Node) *html.Node {
+func clone(n *html.Node) *html.Node {
 	m := &html.Node{
 		Type:     n.Type,
 		DataAtom: n.DataAtom,
@@ -362,4 +389,16 @@ func Clone(n *html.Node) *html.Node {
 	}
 	copy(m.Attr, n.Attr)
 	return m
+}
+
+// reparentChildren reparents all of src's child nodes to dst.
+func reparentChildren(dst, src *html.Node) {
+	for {
+		child := src.FirstChild
+		if child == nil {
+			break
+		}
+		src.RemoveChild(child)
+		dst.AppendChild(child)
+	}
 }

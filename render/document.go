@@ -42,8 +42,9 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	san1Body := addNoticePlaceholdersIfNeeded(body)
 	san2Body := addSeeAlsoPlaceholdersIfNeeded(san1Body)
 	san3Body := node.ReplaceWithComments(san2Body, commentTargetSelector())
-	san4Body := node.DisableAttribute(san3Body, "onclick", disableAtributeSelector())
-	return newDocument(generated, title, jsonOutline, jsonSumtab, metas, links, scripts, san4Body)
+	san4Body := node.WrapTables(san3Body, chapterTableSelector())
+	san5Body := node.DisableAttribute(san4Body, "onclick", disableAtributeSelector())
+	return newDocument(generated, title, jsonOutline, jsonSumtab, metas, links, scripts, san5Body)
 }
 
 // ToJSON renders a document to JSON.
@@ -128,6 +129,12 @@ func seeAlsoPlaceholder() node.Check {
 	isDiv := node.Element("div")
 	isNoticePlaceholder := node.AttrPrefix("id", "seealso_")
 	return node.And(isDiv, isNoticePlaceholder)
+}
+
+func chapterTableSelector() node.Check {
+	isTable := node.Element("table")
+	isChapterType := node.AttrContains("class", "chapter-table")
+	return node.And(isTable, isChapterType)
 }
 
 func metaAccept(acceptMetaName func(string) bool) node.CheckAttrs {
