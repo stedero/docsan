@@ -20,7 +20,7 @@ type Document struct {
 	Title     string              `json:"title"`
 	Outline   *JSON               `json:"outline"`
 	Sumtab    *JSON               `json:"sumtab"`
-	Links     *JSON               `json:"links"`
+	DocLinks  *JSON               `json:"links"`
 	Metas     []map[string]string `json:"metas"`
 	Links     []map[string]string `json:"links"`
 	Scripts   []map[string]string `json:"scripts"`
@@ -64,7 +64,7 @@ func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumt
 		Title:     node.Content(title),
 		Outline:   jsonOutline,
 		Sumtab:    jsonSumtab,
-		Links:     jsonLinks,
+		DocLinks:  jsonLinks,
 		Metas:     toMetas(metas),
 		Links:     node.ToMapArray(links),
 		Scripts:   node.ToMapArray(scripts),
