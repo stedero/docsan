@@ -286,8 +286,8 @@ func AttrPrefix(key, prefix string) Check {
 	return attrCheck(key, attrPrefix(prefix))
 }
 
-// AttrContains returns a function that checks whether a node attribute contains a substring
-// with the specified prefix
+// AttrContains returns a function that checks whether a node attribute
+// value contains a substring
 func AttrContains(key, substr string) Check {
 	return attrCheck(key, attrContains(substr))
 }
