@@ -22,7 +22,6 @@ type Document struct {
 	Sumtab    *JSON               `json:"sumtab"`
 	DocLinks  *JSON               `json:"links"`
 	Metas     []map[string]string `json:"metas"`
-	Links     []map[string]string `json:"links"`
 	Scripts   []map[string]string `json:"scripts"`
 	Body      string              `json:"body"`
 }
@@ -39,7 +38,6 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	jsonSumtab := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, sumtabAttrChecker)))
 	jsonLinks := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, linksAttrChecker)))
 	metas := node.FindAll(head, node.Element("meta"))
-	links := node.FindAll(head, node.Element("link"))
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(node.Or(outLineAttrChecker, sumtabAttrChecker, linksAttrChecker))))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
 	san1Body := addNoticePlaceholdersIfNeeded(body)
@@ -47,7 +45,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	san3Body := node.ReplaceWithComments(san2Body, commentTargetSelector())
 	san4Body := node.WrapTables(san3Body, chapterTableSelector())
 	san5Body := node.DisableAttribute(san4Body, "onclick", disableAtributeSelector())
-	return newDocument(generated, title, jsonOutline, jsonSumtab, jsonLinks, metas, links, scripts, san5Body)
+	return newDocument(generated, title, jsonOutline, jsonSumtab, jsonLinks, metas, scripts, san5Body)
 }
 
 // ToJSON renders a document to JSON.
@@ -58,7 +56,7 @@ func (document *Document) ToJSON(w io.Writer) error {
 }
 
 // newDocument create a new document
-func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumtab *JSON, jsonLinks *JSON, metas []*html.Node, links []*html.Node, scripts []*html.Node, sanitizedBody *html.Node) *Document {
+func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumtab *JSON, jsonLinks *JSON, metas []*html.Node, scripts []*html.Node, sanitizedBody *html.Node) *Document {
 	return &Document{
 		Generated: "docsan " + generated,
 		Title:     node.Content(title),
@@ -66,7 +64,6 @@ func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumt
 		Sumtab:    jsonSumtab,
 		DocLinks:  jsonLinks,
 		Metas:     toMetas(metas),
-		Links:     node.ToMapArray(links),
 		Scripts:   node.ToMapArray(scripts),
 		Body:      node.RenderChildrenCommentParent(sanitizedBody)}
 }
