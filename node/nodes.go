@@ -167,6 +167,15 @@ func FindAll(n *html.Node, accept Check) []*html.Node {
 	return coll.nodes
 }
 
+// Remove removes all selected nodes.
+func Remove(node *html.Node, accept Check) *html.Node {
+	for _, n := range FindAll(node, accept) {
+		parent := n.Parent
+		parent.RemoveChild(n)
+	}
+	return node
+}
+
 // walk the node tree
 func (coll *collector) walk(n *html.Node) {
 	coll.check(n)
