@@ -16,14 +16,15 @@ type JSON struct {
 
 // Document defines a document to render as JSON
 type Document struct {
-	Generated string              `json:"generated"`
-	Title     string              `json:"title"`
-	Outline   *JSON               `json:"outline"`
-	Sumtab    *JSON               `json:"sumtab"`
-	DocLinks  *JSON               `json:"links"`
-	Metas     []map[string]string `json:"metas"`
-	Scripts   []map[string]string `json:"scripts"`
-	Body      string              `json:"body"`
+	Generated  string              `json:"generated"`
+	Title      string              `json:"title"`
+	Outline    *JSON               `json:"outline"`
+	Sumtab     *JSON               `json:"sumtab"`
+	DocLinks   *JSON               `json:"links"`
+	References *JSON               `json:"references"`
+	Metas      []map[string]string `json:"metas"`
+	Scripts    []map[string]string `json:"scripts"`
+	Body       string              `json:"body"`
 }
 
 // Transform transforms a HTML node to a document structure for JSON output.
@@ -32,14 +33,16 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	outLineAttrChecker := node.AttrEquals("id", "outline")
 	sumtabAttrChecker := node.AttrEquals("id", "sumtab")
 	linksAttrChecker := node.AttrEquals("id", "links")
+	refsAttrChecker := node.AttrEquals("id", "references")
 	tocAttrChecker := node.AttrEquals("id", "script_toc")
 	head := node.FindFirst(htmlDoc, node.Element("head"))
 	title := node.FindFirst(head, node.Element("title"))
 	jsonOutline := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, outLineAttrChecker)))
 	jsonSumtab := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, sumtabAttrChecker)))
 	jsonLinks := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, linksAttrChecker)))
+	jsonRefs := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, refsAttrChecker)))
 	metas := node.FindAll(head, node.Element("meta"))
-	scriptsToDelete := node.And(scriptSelector, node.Or(outLineAttrChecker, sumtabAttrChecker, linksAttrChecker, tocAttrChecker))
+	scriptsToDelete := node.And(scriptSelector, node.Or(outLineAttrChecker, sumtabAttrChecker, linksAttrChecker, refsAttrChecker, tocAttrChecker))
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(scriptsToDelete)))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
 	san1Body := addNoticePlaceholdersIfNeeded(body)
@@ -48,7 +51,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	san4Body := node.ReplaceWithComments(san3Body, commentTargetSelector())
 	san5Body := node.WrapTables(san4Body, chapterTableSelector())
 	san6Body := node.DisableAttribute(san5Body, "onclick", disableAtributeSelector())
-	return newDocument(generated, title, jsonOutline, jsonSumtab, jsonLinks, metas, scripts, san6Body)
+	return newDocument(generated, title, jsonOutline, jsonSumtab, jsonLinks, jsonRefs, metas, scripts, san6Body)
 }
 
 // ToJSON renders a document to JSON.
@@ -59,16 +62,17 @@ func (document *Document) ToJSON(w io.Writer) error {
 }
 
 // newDocument create a new document
-func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumtab *JSON, jsonLinks *JSON, metas []*html.Node, scripts []*html.Node, sanitizedBody *html.Node) *Document {
+func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumtab *JSON, jsonLinks *JSON, jsonRefs *JSON, metas []*html.Node, scripts []*html.Node, sanitizedBody *html.Node) *Document {
 	return &Document{
-		Generated: "docsan " + generated,
-		Title:     node.Content(title),
-		Outline:   jsonOutline,
-		Sumtab:    jsonSumtab,
-		DocLinks:  jsonLinks,
-		Metas:     toMetas(metas),
-		Scripts:   node.ToMapArray(scripts),
-		Body:      node.RenderChildrenCommentParent(sanitizedBody)}
+		Generated:  "docsan " + generated,
+		Title:      node.Content(title),
+		Outline:    jsonOutline,
+		Sumtab:     jsonSumtab,
+		DocLinks:   jsonLinks,
+		References: jsonRefs,
+		Metas:      toMetas(metas),
+		Scripts:    node.ToMapArray(scripts),
+		Body:       node.RenderChildrenCommentParent(sanitizedBody)}
 }
 
 // MarshalJSON marshals a pre-rendered JSON object
