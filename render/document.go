@@ -9,6 +9,13 @@ import (
 	"ibfd.org/docsan/node"
 )
 
+type jsonType int
+
+const (
+	jsonArray jsonType = iota
+	jsonObject
+)
+
 // JSON defines pre-rendered JSON
 type JSON struct {
 	json string
@@ -37,10 +44,10 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	tocAttrChecker := node.AttrEquals("id", "script_toc")
 	head := node.FindFirst(htmlDoc, node.Element("head"))
 	title := node.FindFirst(head, node.Element("title"))
-	jsonOutline := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, outLineAttrChecker)))
-	jsonSumtab := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, sumtabAttrChecker)))
-	jsonLinks := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, linksAttrChecker)))
-	jsonRefs := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, refsAttrChecker)))
+	jsonOutline := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, outLineAttrChecker)), jsonObject)
+	jsonSumtab := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, sumtabAttrChecker)), jsonObject)
+	jsonLinks := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, linksAttrChecker)), jsonObject)
+	jsonRefs := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, refsAttrChecker)), jsonArray)
 	metas := node.FindAll(head, node.Element("meta"))
 	scriptsToDelete := node.And(scriptSelector, node.Or(outLineAttrChecker, sumtabAttrChecker, linksAttrChecker, refsAttrChecker, tocAttrChecker))
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(scriptsToDelete)))
@@ -152,10 +159,15 @@ func metaAccept(acceptMetaName func(string) bool) node.CheckAttrs {
 	}
 }
 
-func formatJSON(n *html.Node) *JSON {
+func formatJSON(n *html.Node, jtype jsonType) *JSON {
 	var data string
 	if n == nil {
-		data = "{}"
+		switch jtype {
+		case jsonArray:
+			data = "[]"
+		case jsonObject:
+			data = "{}"
+		}
 	} else {
 		data = n.FirstChild.Data
 	}
