@@ -12,7 +12,7 @@ import (
 // Check defines functions for checking nodes
 type Check func(*html.Node) bool
 
-// Transform creates a node from a node if the transformation
+// Transform creates a node from a node. If the transformation
 // cannot be performed then nil must be returned.
 type Transform func(*html.Node) *html.Node
 
@@ -102,12 +102,7 @@ func AddNoticePlaceholders(node *html.Node, accept Check) *html.Node {
 		attr2 := html.Attribute{Key: "class", Val: "ib-notice"}
 		attr3 := html.Attribute{Key: "data-generator", Val: "docsan"}
 		attrs := []html.Attribute{attr1, attr2, attr3}
-		div := &html.Node{
-			Type:     html.ElementNode,
-			DataAtom: a.Div,
-			Data:     a.Div.String(),
-			Attr:     attrs,
-		}
+		div := newDiv(attrs)
 		n.InsertBefore(div, n.FirstChild)
 	}
 	return node
@@ -122,12 +117,7 @@ func AddSeeAlsoPlaceholders(node *html.Node, accept Check) *html.Node {
 		attr2 := html.Attribute{Key: "class", Val: "ib-seealso"}
 		attr3 := html.Attribute{Key: "data-generator", Val: "docsan"}
 		attrs := []html.Attribute{attr1, attr2, attr3}
-		div := &html.Node{
-			Type:     html.ElementNode,
-			DataAtom: a.Div,
-			Data:     a.Div.String(),
-			Attr:     attrs,
-		}
+		div := newDiv(attrs)
 		n.AppendChild(div)
 	}
 	return node
@@ -137,18 +127,23 @@ func AddSeeAlsoPlaceholders(node *html.Node, accept Check) *html.Node {
 func WrapTables(node *html.Node, accept Check) *html.Node {
 	for _, n := range FindAll(node, accept) {
 		attr1 := html.Attribute{Key: "class", Val: "ib-table-wrapper"}
-		attrs := []html.Attribute{attr1}
-		div := &html.Node{
-			Type:     html.ElementNode,
-			DataAtom: a.Div,
-			Data:     a.Div.String(),
-			Attr:     attrs,
-		}
+		attr2 := html.Attribute{Key: "data-generator", Val: "docsan"}
+		attrs := []html.Attribute{attr1, attr2}
+		div := newDiv(attrs)
 		parent := n.Parent
 		parent.InsertBefore(div, n)
 		move(div, n)
 	}
 	return node
+}
+
+func newDiv(attrs []html.Attribute) *html.Node {
+	return &html.Node{
+		Type:     html.ElementNode,
+		DataAtom: a.Div,
+		Data:     a.Div.String(),
+		Attr:     attrs,
+	}
 }
 
 // FindFirst finds the first node that is accepted
