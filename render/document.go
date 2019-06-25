@@ -23,15 +23,15 @@ type JSON struct {
 
 // Document defines a document to render as JSON
 type Document struct {
-	Generated  string              `json:"generated"`
-	Title      string              `json:"title"`
-	Outline    *JSON               `json:"outline"`
-	Sumtab     *JSON               `json:"sumtab"`
-	DocLinks   *JSON               `json:"links"`
-	References *JSON               `json:"references"`
-	Metas      []map[string]string `json:"metas"`
-	Scripts    []map[string]string `json:"scripts"`
-	Body       string              `json:"body"`
+	Generated string              `json:"generated"`
+	Title     string              `json:"title"`
+	Outline   *JSON               `json:"outline"`
+	Sumtab    *JSON               `json:"sumtab"`
+	DocLinks  *JSON               `json:"links"`
+	SeeAlso   *JSON               `json:"seealso"`
+	Metas     []map[string]string `json:"metas"`
+	Scripts   []map[string]string `json:"scripts"`
+	Body      string              `json:"body"`
 }
 
 // Transform transforms a HTML node to a document structure for JSON output.
@@ -47,7 +47,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	jsonOutline := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, outLineAttrChecker)), jsonObject)
 	jsonSumtab := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, sumtabAttrChecker)), jsonObject)
 	jsonLinks := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, linksAttrChecker)), jsonObject)
-	jsonRefs := formatJSONRefs(node.FindFirst(htmlDoc, node.And(scriptSelector, refsAttrChecker)))
+	jsonRefs := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, refsAttrChecker)), jsonObject)
 	metas := node.FindAll(head, node.Element("meta"))
 	scriptsToDelete := node.And(scriptSelector, node.Or(outLineAttrChecker, sumtabAttrChecker, linksAttrChecker, refsAttrChecker, tocAttrChecker))
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(scriptsToDelete)))
@@ -71,15 +71,15 @@ func (document *Document) ToJSON(w io.Writer) error {
 // newDocument create a new document
 func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumtab *JSON, jsonLinks *JSON, jsonRefs *JSON, metas []*html.Node, scripts []*html.Node, sanitizedBody *html.Node) *Document {
 	return &Document{
-		Generated:  "docsan " + generated,
-		Title:      node.Content(title),
-		Outline:    jsonOutline,
-		Sumtab:     jsonSumtab,
-		DocLinks:   jsonLinks,
-		References: jsonRefs,
-		Metas:      toMetas(metas),
-		Scripts:    node.ToMapArray(scripts),
-		Body:       node.RenderChildrenCommentParent(sanitizedBody)}
+		Generated: "docsan " + generated,
+		Title:     node.Content(title),
+		Outline:   jsonOutline,
+		Sumtab:    jsonSumtab,
+		DocLinks:  jsonLinks,
+		SeeAlso:   jsonRefs,
+		Metas:     toMetas(metas),
+		Scripts:   node.ToMapArray(scripts),
+		Body:      node.RenderChildrenCommentParent(sanitizedBody)}
 }
 
 // MarshalJSON marshals a pre-rendered JSON object
@@ -157,13 +157,6 @@ func metaAccept(acceptMetaName func(string) bool) node.CheckAttrs {
 		name, present := attrs["name"]
 		return !present || acceptMetaName(name)
 	}
-}
-
-func formatJSONRefs(n *html.Node) *JSON {
-	if n == nil {
-		return formatJSON(n, jsonArray)
-	}
-	return formatJSON(n.FirstChild, jsonArray)
 }
 
 func formatJSON(n *html.Node, jtype jsonType) *JSON {
