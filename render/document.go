@@ -47,7 +47,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	jsonOutline := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, outLineAttrChecker)), jsonObject)
 	jsonSumtab := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, sumtabAttrChecker)), jsonObject)
 	jsonLinks := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, linksAttrChecker)), jsonObject)
-	jsonRefs := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, refsAttrChecker)), jsonArray)
+	jsonRefs := formatJSONRefs(node.FindFirst(htmlDoc, node.And(scriptSelector, refsAttrChecker)))
 	metas := node.FindAll(head, node.Element("meta"))
 	scriptsToDelete := node.And(scriptSelector, node.Or(outLineAttrChecker, sumtabAttrChecker, linksAttrChecker, refsAttrChecker, tocAttrChecker))
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(scriptsToDelete)))
@@ -157,6 +157,13 @@ func metaAccept(acceptMetaName func(string) bool) node.CheckAttrs {
 		name, present := attrs["name"]
 		return !present || acceptMetaName(name)
 	}
+}
+
+func formatJSONRefs(n *html.Node) *JSON {
+	if n == nil {
+		return formatJSON(n, jsonArray)
+	}
+	return formatJSON(n.FirstChild, jsonArray)
 }
 
 func formatJSON(n *html.Node, jtype jsonType) *JSON {
