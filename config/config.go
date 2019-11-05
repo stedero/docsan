@@ -25,13 +25,15 @@ type LogDef struct {
 
 // Config defines the structure of the config.json file
 type Config struct {
-	Logging  LogDef   `json:"logging"`
-	MetaTags []string `json:"meta_tags"`
+	Logging    LogDef   `json:"logging"`
+	JSONPretty bool     `json:"json_pretty"`
+	MetaTags   []string `json:"meta_tags"`
 }
 
 var allowedMetaNames map[string]bool
 var configFilePath string
 var logFile *os.File
+var jsonPretty bool
 
 func init() {
 	flag.Parse()
@@ -49,6 +51,7 @@ func init() {
 		log.Fatalf("fail to unmarshal from file %s: %v", configFilePath, err)
 	}
 	logFile = configureLogging(&config.Logging)
+	jsonPretty = config.JSONPretty
 	allowedMetaNames = make(map[string]bool, len(config.MetaTags))
 	for _, metaName := range config.MetaTags {
 		allowedMetaNames[metaName] = true
@@ -88,6 +91,11 @@ func configureLogging(logConfig *LogDef) *os.File {
 		log4u.SetOutput(logger)
 	}
 	return logFile
+}
+
+// JSONPretty indicates whether JSON output should be formatted nicely.
+func JSONPretty() bool {
+	return jsonPretty
 }
 
 // MetaNameAccept returns a function to filter meta tags

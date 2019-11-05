@@ -4,6 +4,7 @@
         "filename": "./docsan.log",
         "level": "DEBUG"
     },
+    "json_pretty": true,
     "meta_tags": [
         "citation",
         "collection",

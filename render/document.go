@@ -64,7 +64,11 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 // ToJSON renders a document to JSON.
 func (document *Document) ToJSON(w io.Writer) error {
 	encoder := json.NewEncoder(w)
-	encoder.SetIndent("", "  ")
+	if config.JSONPretty() {
+		encoder.SetIndent("", "  ")
+	} else {
+		encoder.SetIndent("", "")
+	}
 	return encoder.Encode(document)
 }
 
