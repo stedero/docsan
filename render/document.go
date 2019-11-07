@@ -29,6 +29,7 @@ type Document struct {
 	Sumtab    *JSON               `json:"sumtab"`
 	DocLinks  *JSON               `json:"links"`
 	SeeAlso   *JSON               `json:"seealso"`
+	Tables    *JSON               `json:"tables"`
 	Metas     []map[string]string `json:"metas"`
 	Scripts   []map[string]string `json:"scripts"`
 	Body      string              `json:"body"`
@@ -41,6 +42,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	sumtabAttrChecker := node.AttrEquals("id", "sumtab")
 	linksAttrChecker := node.AttrEquals("id", "links")
 	refsAttrChecker := node.AttrEquals("id", "references")
+	tablesAttrChecker := node.AttrEquals("id", "tables")
 	tocAttrChecker := node.AttrEquals("id", "script_toc")
 	head := node.FindFirst(htmlDoc, node.Element("head"))
 	title := node.FindFirst(head, node.Element("title"))
@@ -48,8 +50,9 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	jsonSumtab := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, sumtabAttrChecker)), jsonObject)
 	jsonLinks := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, linksAttrChecker)), jsonObject)
 	jsonRefs := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, refsAttrChecker)), jsonObject)
+	jsonTables := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, tablesAttrChecker)), jsonObject)
 	metas := node.FindAll(head, node.Element("meta"))
-	scriptsToDelete := node.And(scriptSelector, node.Or(outLineAttrChecker, sumtabAttrChecker, linksAttrChecker, refsAttrChecker, tocAttrChecker))
+	scriptsToDelete := node.And(scriptSelector, node.Or(outLineAttrChecker, sumtabAttrChecker, linksAttrChecker, refsAttrChecker, tablesAttrChecker, tocAttrChecker))
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(scriptsToDelete)))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
 	san1Body := addNoticePlaceholdersIfNeeded(body)
@@ -58,7 +61,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	san4Body := node.ReplaceWithComments(san3Body, commentTargetSelector())
 	san5Body := node.WrapTables(san4Body, chapterTableSelector())
 	san6Body := node.DisableAttribute(san5Body, "onclick", disableAtributeSelector())
-	return newDocument(generated, title, jsonOutline, jsonSumtab, jsonLinks, jsonRefs, metas, scripts, san6Body)
+	return newDocument(generated, title, jsonOutline, jsonSumtab, jsonLinks, jsonRefs, jsonTables, metas, scripts, san6Body)
 }
 
 // ToJSON renders a document to JSON.
@@ -73,7 +76,7 @@ func (document *Document) ToJSON(w io.Writer) error {
 }
 
 // newDocument create a new document
-func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumtab *JSON, jsonLinks *JSON, jsonRefs *JSON, metas []*html.Node, scripts []*html.Node, sanitizedBody *html.Node) *Document {
+func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumtab *JSON, jsonLinks *JSON, jsonRefs *JSON, jsonTables *JSON, metas []*html.Node, scripts []*html.Node, sanitizedBody *html.Node) *Document {
 	return &Document{
 		Generated: "docsan " + generated,
 		Title:     node.Content(title),
@@ -81,6 +84,7 @@ func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumt
 		Sumtab:    jsonSumtab,
 		DocLinks:  jsonLinks,
 		SeeAlso:   jsonRefs,
+		Tables:    jsonTables,
 		Metas:     toMetas(metas),
 		Scripts:   node.ToMapArray(scripts),
 		Body:      node.RenderChildrenCommentParent(sanitizedBody)}
