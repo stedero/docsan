@@ -1,7 +1,7 @@
 include /usr/local/IBFD/etc/docker.env
 
 TAG=$(shell date +%Y-%m-%d-%H%M)
-VERSION=1.0
+VERSION=1.0.1
 IMAGE=ibfd/docsan
 
 GOLANG=golang:1.8
