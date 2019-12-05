@@ -1,0 +1,12 @@
+{
+    "tables":[
+        {
+            "type": "<the table type>",
+            "id":"<reference to the id of an element in the document>",
+            "table":{
+                
+            }
+        }
+
+    ]
+}

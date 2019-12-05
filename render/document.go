@@ -50,7 +50,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	jsonSumtab := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, sumtabAttrChecker)), jsonObject)
 	jsonLinks := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, linksAttrChecker)), jsonObject)
 	jsonRefs := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, refsAttrChecker)), jsonObject)
-	jsonTables := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, tablesAttrChecker)), jsonObject)
+	jsonTables := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, tablesAttrChecker)), jsonArray)
 	metas := node.FindAll(head, node.Element("meta"))
 	scriptsToDelete := node.And(scriptSelector, node.Or(outLineAttrChecker, sumtabAttrChecker, linksAttrChecker, refsAttrChecker, tablesAttrChecker, tocAttrChecker))
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(scriptsToDelete)))
