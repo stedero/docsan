@@ -1,0 +1,24 @@
+stages:
+  - deploy
+  - build
+
+variables:
+  GIT_STRATEGY: fetch
+  GIT_CLEAN_FLAGS: none
+deploy:
+  script:
+    - make ci-build
+    - $DEV_DEPLOY
+  stage: deploy
+  only:
+    - master
+
+build:
+  script:
+    - make ci-build
+  stage: build
+  only:
+    - branches
+  except:
+    - master
+
