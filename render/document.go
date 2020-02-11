@@ -3,8 +3,8 @@ package render
 import (
 	"encoding/json"
 	"io"
-	"strings"
 	"regexp"
+	"strings"
 
 	"golang.org/x/net/html"
 	"ibfd.org/docsan/config"
@@ -102,7 +102,7 @@ func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumt
 		SeeAlso:   jsonRefs,
 		Tables:    jsonTables,
 		Metas:     toMetas(metas),
-		Glossary:   extractGlossaryArticles(glossary),
+		Glossary:  extractGlossaryArticles(glossary),
 		Scripts:   node.ToMapArray(scripts),
 		Body:      node.RenderChildrenCommentParent(sanitizedBody)}
 }
@@ -191,6 +191,9 @@ func glossarySelector() node.Check {
 }
 
 func extractGlossaryArticles(glossary *html.Node) []*GlossaryEntry {
+	if glossary == nil {
+		return []*GlossaryEntry{}
+	}
 	articles := node.FindAll(glossary, node.Element("article"))
 	entries := make([]*GlossaryEntry, 0, len(articles))
 	for _, article := range articles {
