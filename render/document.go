@@ -34,12 +34,12 @@ type Document struct {
 	Tables    *JSON               `json:"tables"`
 	Metas     []map[string]string `json:"metas"`
 	Scripts   []map[string]string `json:"scripts"`
-	Glossary  []*GlossaryEntry    `json:"glossary"`
+	Lookup    []*LookupEntry      `json:"lookup"`
 	Body      string              `json:"body"`
 }
 
-// GlossaryEntry defines a glossary article.
-type GlossaryEntry struct {
+// LookupEntry defines a lookup entry.
+type LookupEntry struct {
 	Title string `json:"title"`
 	ID    string `json:"id"`
 }
@@ -102,8 +102,8 @@ func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumt
 		SeeAlso:   jsonRefs,
 		Tables:    jsonTables,
 		Metas:     toMetas(metas),
-		Glossary:  extractGlossaryArticles(glossary),
 		Scripts:   node.ToMapArray(scripts),
+		Lookup:    extractGlossaryArticles(glossary),
 		Body:      node.RenderChildrenCommentParent(sanitizedBody)}
 }
 
@@ -190,19 +190,19 @@ func glossarySelector() node.Check {
 	return node.And(isMain, isGlossaryType)
 }
 
-func extractGlossaryArticles(glossary *html.Node) []*GlossaryEntry {
+func extractGlossaryArticles(glossary *html.Node) []*LookupEntry {
 	if glossary == nil {
-		return []*GlossaryEntry{}
+		return []*LookupEntry{}
 	}
 	articles := node.FindAll(glossary, node.Element("article"))
-	entries := make([]*GlossaryEntry, 0, len(articles))
+	entries := make([]*LookupEntry, 0, len(articles))
 	for _, article := range articles {
 		attrs := node.AttrsAsMap(article)
 		id := attrs["id"]
 		hdr := node.FindFirst(article, node.Element("h3"))
 		title := strings.TrimSpace(spaceRE.ReplaceAllString(node.Content(hdr), " "))
-		ge := &GlossaryEntry{title, id}
-		entries = append(entries, ge)
+		le := &LookupEntry{title, id}
+		entries = append(entries, le)
 	}
 	return entries
 }
