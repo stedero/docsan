@@ -3,8 +3,6 @@ package render
 import (
 	"encoding/json"
 	"io"
-	"regexp"
-	"strings"
 
 	"golang.org/x/net/html"
 	"ibfd.org/docsan/config"
@@ -32,22 +30,10 @@ type Document struct {
 	DocLinks  *JSON               `json:"links"`
 	SeeAlso   *JSON               `json:"seealso"`
 	Tables    *JSON               `json:"tables"`
+	Lookup    *JSON               `json:"lookup"`
 	Metas     []map[string]string `json:"metas"`
 	Scripts   []map[string]string `json:"scripts"`
-	Lookup    []*LookupEntry      `json:"lookup"`
 	Body      string              `json:"body"`
-}
-
-// LookupEntry defines a lookup entry.
-type LookupEntry struct {
-	Title string `json:"title"`
-	ID    string `json:"id"`
-}
-
-var spaceRE *regexp.Regexp
-
-func init() {
-	spaceRE = regexp.MustCompile(`\s+`)
 }
 
 // Transform transforms a HTML node to a document structure for JSON output.
@@ -58,6 +44,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	linksAttrChecker := node.AttrEquals("id", "links")
 	refsAttrChecker := node.AttrEquals("id", "references")
 	tablesAttrChecker := node.AttrEquals("id", "tables")
+	lookupAttrChecker := node.AttrEquals("id", "lookup")
 	tocAttrChecker := node.AttrEquals("id", "script_toc")
 	head := node.FindFirst(htmlDoc, node.Element("head"))
 	title := node.FindFirst(head, node.Element("title"))
@@ -66,9 +53,9 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	jsonLinks := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, linksAttrChecker)), jsonObject)
 	jsonRefs := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, refsAttrChecker)), jsonObject)
 	jsonTables := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, tablesAttrChecker)), jsonArray)
+	jsonLookup := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, lookupAttrChecker)), jsonArray)
 	metas := node.FindAll(head, node.Element("meta"))
-	glossary := node.FindFirst(htmlDoc, glossarySelector())
-	scriptsToDelete := node.And(scriptSelector, node.Or(outLineAttrChecker, sumtabAttrChecker, linksAttrChecker, refsAttrChecker, tablesAttrChecker, tocAttrChecker))
+	scriptsToDelete := node.And(scriptSelector, node.Or(outLineAttrChecker, sumtabAttrChecker, linksAttrChecker, refsAttrChecker, tablesAttrChecker, lookupAttrChecker, tocAttrChecker))
 	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(scriptsToDelete)))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
 	san1Body := addNoticePlaceholdersIfNeeded(body)
@@ -77,7 +64,7 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	san4Body := node.ReplaceWithComments(san3Body, commentTargetSelector())
 	san5Body := node.WrapTables(san4Body, chapterTableSelector())
 	san6Body := node.DisableAttribute(san5Body, "onclick", disableAtributeSelector())
-	return newDocument(generated, title, jsonOutline, jsonSumtab, jsonLinks, jsonRefs, jsonTables, metas, glossary, scripts, san6Body)
+	return newDocument(generated, title, jsonOutline, jsonSumtab, jsonLinks, jsonRefs, jsonTables, jsonLookup, metas, scripts, san6Body)
 }
 
 // ToJSON renders a document to JSON.
@@ -92,7 +79,7 @@ func (document *Document) ToJSON(w io.Writer) error {
 }
 
 // newDocument create a new document
-func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumtab *JSON, jsonLinks *JSON, jsonRefs *JSON, jsonTables *JSON, metas []*html.Node, glossary *html.Node, scripts []*html.Node, sanitizedBody *html.Node) *Document {
+func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumtab *JSON, jsonLinks *JSON, jsonRefs *JSON, jsonTables *JSON, jsonLookup *JSON, metas []*html.Node, scripts []*html.Node, sanitizedBody *html.Node) *Document {
 	return &Document{
 		Generated: "docsan " + generated,
 		Title:     node.Content(title),
@@ -101,9 +88,9 @@ func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumt
 		DocLinks:  jsonLinks,
 		SeeAlso:   jsonRefs,
 		Tables:    jsonTables,
+		Lookup:    jsonLookup,
 		Metas:     toMetas(metas),
 		Scripts:   node.ToMapArray(scripts),
-		Lookup:    extractGlossaryArticles(glossary),
 		Body:      node.RenderChildrenCommentParent(sanitizedBody)}
 }
 
@@ -182,29 +169,6 @@ func metaAccept(acceptMetaName func(string) bool) node.CheckAttrs {
 		name, present := attrs["name"]
 		return !present || acceptMetaName(name)
 	}
-}
-
-func glossarySelector() node.Check {
-	isMain := node.Element("main")
-	isGlossaryType := node.AttrContains("class", "glossary")
-	return node.And(isMain, isGlossaryType)
-}
-
-func extractGlossaryArticles(glossary *html.Node) []*LookupEntry {
-	if glossary == nil {
-		return []*LookupEntry{}
-	}
-	articles := node.FindAll(glossary, node.Element("article"))
-	entries := make([]*LookupEntry, 0, len(articles))
-	for _, article := range articles {
-		attrs := node.AttrsAsMap(article)
-		id := attrs["id"]
-		hdr := node.FindFirst(article, node.Element("h3"))
-		title := strings.TrimSpace(spaceRE.ReplaceAllString(node.Content(hdr), " "))
-		le := &LookupEntry{title, id}
-		entries = append(entries, le)
-	}
-	return entries
 }
 
 func formatJSON(n *html.Node, jtype jsonType) *JSON {
