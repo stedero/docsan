@@ -1,24 +1,4 @@
-stages:
-  - deploy
-  - build
-
-variables:
-  GIT_STRATEGY: fetch
-  GIT_CLEAN_FLAGS: none
-deploy:
-  script:
-    - make ci-build
-    - $DEV_DEPLOY
-  stage: deploy
-  only:
-    - master
-
-build:
-  script:
-    - make ci-build
-  stage: build
-  only:
-    - branches
-  except:
-    - master
-
+include:
+  project: Config/ci-pipeline-includes
+  file: yml/common_go_full.yml
+  ref: v-1.0.2
