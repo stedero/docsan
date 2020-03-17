@@ -2,12 +2,24 @@ package node
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"strings"
 
 	"golang.org/x/net/html"
 	a "golang.org/x/net/html/atom"
+	log "ibfd.org/docsan/log4u"
 )
+
+// Action defines a action tat modifies the HTML structure of a document.
+type Action struct {
+	DocID string
+}
+
+// NewAction creates a document action.
+func NewAction(docID string) *Action {
+	return &Action{docID}
+}
 
 // Check defines functions for checking nodes
 type Check func(*html.Node) bool
@@ -66,8 +78,12 @@ func replace(node *html.Node, accept Check, transform Transform) *html.Node {
 
 // DisableAttribute prefixes an attribute key with 'xxx' to disable it.
 // To be used for JavaScript events such as 'onclick'.
-func DisableAttribute(node *html.Node, key string, accept Check) *html.Node {
-	for _, n := range FindAll(node, accept) {
+func (action *Action) DisableAttribute(node *html.Node, key string, accept Check) *html.Node {
+	nodes := FindAll(node, accept)
+	if len(nodes) > 0 {
+		action.Log(fmt.Sprintf("disabling %d %s events", len(nodes), key))
+	}
+	for _, n := range nodes {
 		var found = -1
 		for ai, attr := range n.Attr {
 			if attr.Key == key {
@@ -94,8 +110,12 @@ func toContent(n *html.Node) *html.Node {
 }
 
 // AddNoticePlaceholders add placeholders for the action bars
-func AddNoticePlaceholders(node *html.Node, accept Check) *html.Node {
-	for _, n := range FindAll(node, accept) {
+func (action *Action) AddNoticePlaceholders(node *html.Node, accept Check) *html.Node {
+	nodes := FindAll(node, accept)
+	if len(nodes) > 0 {
+		action.Log(fmt.Sprintf("adding %d notice placeholders", len(nodes)))
+	}
+	for _, n := range nodes {
 		attrMap := AttrsAsMap(n)
 		id, _ := attrMap["id"]
 		attr1 := html.Attribute{Key: "id", Val: "notice_" + id}
@@ -109,8 +129,12 @@ func AddNoticePlaceholders(node *html.Node, accept Check) *html.Node {
 }
 
 // AddSeeAlsoPlaceholders add placeholders for the see also sections.
-func AddSeeAlsoPlaceholders(node *html.Node, accept Check) *html.Node {
-	for _, n := range FindAll(node, accept) {
+func (action *Action) AddSeeAlsoPlaceholders(node *html.Node, accept Check) *html.Node {
+	nodes := FindAll(node, accept)
+	if len(nodes) > 0 {
+		action.Log(fmt.Sprintf("adding %d seealso placeholders", len(nodes)))
+	}
+	for _, n := range nodes {
 		attrMap := AttrsAsMap(n)
 		id, _ := attrMap["id"]
 		attr1 := html.Attribute{Key: "id", Val: "seealso_" + id}
@@ -124,8 +148,12 @@ func AddSeeAlsoPlaceholders(node *html.Node, accept Check) *html.Node {
 }
 
 // WrapTables wraps nodes in a div
-func WrapTables(node *html.Node, accept Check) *html.Node {
-	for _, n := range FindAll(node, accept) {
+func (action *Action) WrapTables(node *html.Node, accept Check) *html.Node {
+	nodes := FindAll(node, accept)
+	if len(nodes) > 0 {
+		action.Log(fmt.Sprintf("wrapping %d tables", len(nodes)))
+	}
+	for _, n := range nodes {
 		attr1 := html.Attribute{Key: "class", Val: "ib-table-wrapper"}
 		attr2 := html.Attribute{Key: "data-generator", Val: "docsan"}
 		attrs := []html.Attribute{attr1, attr2}
@@ -135,6 +163,11 @@ func WrapTables(node *html.Node, accept Check) *html.Node {
 		move(div, n)
 	}
 	return node
+}
+
+// Log logs an action.
+func (action *Action) Log(msg string) {
+	log.Errorf("%s: %s", action.DocID, msg)
 }
 
 func newDiv(attrs []html.Attribute) *html.Node {
