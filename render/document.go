@@ -3,6 +3,7 @@ package render
 import (
 	"encoding/json"
 	"io"
+	"strings"
 
 	"golang.org/x/net/html"
 	"ibfd.org/docsan/config"
@@ -47,24 +48,37 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	lookupAttrChecker := node.AttrEquals("id", "lookup")
 	tocAttrChecker := node.AttrEquals("id", "script_toc")
 	head := node.FindFirst(htmlDoc, node.Element("head"))
-	title := node.FindFirst(head, node.Element("title"))
+	title := node.Content(node.FindFirst(head, node.Element("title")))
 	jsonOutline := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, outLineAttrChecker)), jsonObject)
 	jsonSumtab := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, sumtabAttrChecker)), jsonObject)
 	jsonLinks := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, linksAttrChecker)), jsonObject)
 	jsonRefs := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, refsAttrChecker)), jsonObject)
 	jsonTables := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, tablesAttrChecker)), jsonArray)
 	jsonLookup := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, lookupAttrChecker)), jsonArray)
-	metas := node.FindAll(head, node.Element("meta"))
+	metas := toMetas(node.FindAll(head, node.Element("meta")))
+	action := node.NewAction(getDocID(metas))
 	scriptsToDelete := node.And(scriptSelector, node.Or(outLineAttrChecker, sumtabAttrChecker, linksAttrChecker, refsAttrChecker, tablesAttrChecker, lookupAttrChecker, tocAttrChecker))
-	scripts := node.FindAll(head, node.And(scriptSelector, node.Not(scriptsToDelete)))
+	scripts := node.ToMapArray(node.FindAll(head, node.And(scriptSelector, node.Not(scriptsToDelete))))
 	body := node.FindFirst(htmlDoc, node.Element("body"))
-	san1Body := addNoticePlaceholdersIfNeeded(body)
-	san2Body := addSeeAlsoPlaceholdersIfNeeded(san1Body)
+	san1Body := addNoticePlaceholdersIfNeeded(action, body)
+	san2Body := addSeeAlsoPlaceholdersIfNeeded(action, san1Body)
 	san3Body := node.Remove(san2Body, scriptsToDelete)
 	san4Body := node.ReplaceWithComments(san3Body, commentTargetSelector())
-	san5Body := node.WrapTables(san4Body, chapterTableSelector())
-	san6Body := node.DisableAttribute(san5Body, "onclick", disableAtributeSelector())
-	return newDocument(generated, title, jsonOutline, jsonSumtab, jsonLinks, jsonRefs, jsonTables, jsonLookup, metas, scripts, san6Body)
+	san5Body := action.WrapTables(san4Body, chapterTableSelector())
+	san6Body := action.DisableAttribute(san5Body, "onclick", disableAtributeSelector())
+	san7Body := node.RenderChildrenCommentParent(san6Body)
+	return &Document{
+		Generated: "docsan " + generated,
+		Title:     title,
+		Outline:   jsonOutline,
+		Sumtab:    jsonSumtab,
+		DocLinks:  jsonLinks,
+		SeeAlso:   jsonRefs,
+		Tables:    jsonTables,
+		Lookup:    jsonLookup,
+		Metas:     metas,
+		Scripts:   scripts,
+		Body:      san7Body}
 }
 
 // ToJSON renders a document to JSON.
@@ -76,22 +90,6 @@ func (document *Document) ToJSON(w io.Writer) error {
 		encoder.SetIndent("", "")
 	}
 	return encoder.Encode(document)
-}
-
-// newDocument create a new document
-func newDocument(generated string, title *html.Node, jsonOutline *JSON, jsonSumtab *JSON, jsonLinks *JSON, jsonRefs *JSON, jsonTables *JSON, jsonLookup *JSON, metas []*html.Node, scripts []*html.Node, sanitizedBody *html.Node) *Document {
-	return &Document{
-		Generated: "docsan " + generated,
-		Title:     node.Content(title),
-		Outline:   jsonOutline,
-		Sumtab:    jsonSumtab,
-		DocLinks:  jsonLinks,
-		SeeAlso:   jsonRefs,
-		Tables:    jsonTables,
-		Lookup:    jsonLookup,
-		Metas:     toMetas(metas),
-		Scripts:   node.ToMapArray(scripts),
-		Body:      node.RenderChildrenCommentParent(sanitizedBody)}
 }
 
 // MarshalJSON marshals a pre-rendered JSON object
@@ -124,18 +122,18 @@ func disableAtributeSelector() node.Check {
 	return node.And(node.AnyElement(), clickEvents, node.Not(simultaxButton))
 }
 
-func addNoticePlaceholdersIfNeeded(body *html.Node) *html.Node {
+func addNoticePlaceholdersIfNeeded(action *node.Action, body *html.Node) *html.Node {
 	noticePlaceholders := node.FindFirst(body, noticePlaceholder())
 	if noticePlaceholders == nil {
-		return node.AddNoticePlaceholders(body, placeholderTargetSelector())
+		return action.AddNoticePlaceholders(body, placeholderTargetSelector())
 	}
 	return body
 }
 
-func addSeeAlsoPlaceholdersIfNeeded(body *html.Node) *html.Node {
+func addSeeAlsoPlaceholdersIfNeeded(action *node.Action, body *html.Node) *html.Node {
 	seeAlsoPlaceholders := node.FindFirst(body, seeAlsoPlaceholder())
 	if seeAlsoPlaceholders == nil {
-		return node.AddSeeAlsoPlaceholders(body, placeholderTargetSelector())
+		return action.AddSeeAlsoPlaceholders(body, placeholderTargetSelector())
 	}
 	return body
 }
@@ -169,6 +167,15 @@ func metaAccept(acceptMetaName func(string) bool) node.CheckAttrs {
 		name, present := attrs["name"]
 		return !present || acceptMetaName(name)
 	}
+}
+
+func getDocID(metas []map[string]string) string {
+	for _, meta := range metas {
+		if strings.EqualFold(meta["name"], "docid") {
+			return meta["content"]
+		}
+	}
+	return "unknown"
 }
 
 func formatJSON(n *html.Node, jtype jsonType) *JSON {

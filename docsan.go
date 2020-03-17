@@ -34,13 +34,14 @@ func handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func showForm(w http.ResponseWriter) {
+	setServer(w)
 	form := `<html>
 				<head>
 					<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-					<title>DocSan - HTML document sanitizer</title>
+					<title>` + appName() + ` - HTML document sanitizer</title>
 				</head>
 				<body>
-					<h1>DocSan - HTML document sanitizer</h1>
+					<h1>` + appName() + ` - HTML document sanitizer</h1>
 					<form action="/" method="post" enctype="multipart/form-data">
 						<input type="file" name="upload"><br><br>
 						<input type="submit">
@@ -57,6 +58,7 @@ func process(w http.ResponseWriter, r *http.Request) {
 		htmlDoc, err := html.Parse(reader)
 		if err == nil {
 			document := render.Transform(htmlDoc, version)
+			setServer(w)
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(200)
 			err = document.ToJSON(w)
@@ -65,6 +67,7 @@ func process(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := fmt.Sprintf("failed to sanitize: %v", err)
 		log.Errorf(msg)
+		setServer(w)
 		w.WriteHeader(500)
 		w.Write([]byte(msg))
 	}
@@ -92,8 +95,17 @@ func serverError(w http.ResponseWriter, rec *http.Request) {
 		msg := fmt.Sprintf("%v", r)
 		log.Error(msg)
 		debug.PrintStack()
+		setServer(w)
 		w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(msg))
 	}
+}
+
+func setServer(w http.ResponseWriter) {
+	w.Header().Set("Server", appName())
+}
+
+func appName() string {
+	return "Docsan/" + version
 }
