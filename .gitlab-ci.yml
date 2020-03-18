@@ -1,4 +1,4 @@
 include:
   project: Config/ci-pipeline-includes
   file: yml/common_go_full.yml
-  ref: v-1.0.2
+  ref: master
