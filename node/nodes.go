@@ -167,7 +167,7 @@ func (action *Action) WrapTables(node *html.Node, accept Check) *html.Node {
 
 // Log logs an action.
 func (action *Action) Log(msg string) {
-	log.Errorf("%s: %s", action.DocID, msg)
+	log.Errorf("DS1955 %s: %s", action.DocID, msg)
 }
 
 func newDiv(attrs []html.Attribute) *html.Node {
