@@ -21,7 +21,7 @@ func NewAction(docID string) *Action {
 	return &Action{docID}
 }
 
-// Check defines functions for checking nodes
+// Check defines functions to filter nodes.
 type Check func(*html.Node) bool
 
 // Transform creates a node from a node. If the transformation
@@ -41,24 +41,22 @@ func newCollector(accept Check) *collector {
 	return &collector{accept, make([]*html.Node, 0, 32)}
 }
 
-// Check determines whether a node must be accepted
+// collect determines whether a node must be accepted
 // and adds it to this collector if so.
-func (coll *collector) check(node *html.Node) {
+func (coll *collector) collect(node *html.Node) {
 	if coll.accept(node) {
 		coll.nodes = append(coll.nodes, node)
 	}
 }
 
 // ReplaceWithComments replaces all nodes that are accepted with comment nodes.
-// The same node that is passed to this function is also returned
-// because it is transformed in place.
+// Returns the modified node.
 func ReplaceWithComments(node *html.Node, accept Check) *html.Node {
 	return replace(node, accept, toComment)
 }
 
 // ReplaceWithContent replaces all nodes that are accepted with the content of that nodes.
-// The same node that is passed to this function is also returned
-// because it is transformed in place.
+// Returns the modified node.
 func ReplaceWithContent(node *html.Node, accept Check) *html.Node {
 	return replace(node, accept, toContent)
 }
@@ -101,7 +99,7 @@ func toComment(n *html.Node) *html.Node {
 	return &html.Node{Type: html.CommentNode, DataAtom: n.DataAtom, Data: Render(n)}
 }
 
-// toContent renders the node contents assuming one child node.
+// toContent fetches the node contents assuming one child node.
 func toContent(n *html.Node) *html.Node {
 	if n.FirstChild != nil {
 		return clone(n.FirstChild)
@@ -206,7 +204,7 @@ func Remove(node *html.Node, accept Check) *html.Node {
 
 // walk the node tree
 func (coll *collector) walk(n *html.Node) {
-	coll.check(n)
+	coll.collect(n)
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
 		coll.walk(c)
 	}
@@ -214,6 +212,9 @@ func (coll *collector) walk(n *html.Node) {
 
 // Content gets the childdren of a node as an unescaped HTML string.
 func Content(n *html.Node) string {
+	if n == nil {
+		return ""
+	}
 	return html.UnescapeString(RenderChildren(n))
 }
 
@@ -406,7 +407,7 @@ func attrPrefix(prefix string) func(string) bool {
 	}
 }
 
-// move appends a node to another parent and removes it from the current parent.
+// move moves a node from one parent to another.
 func move(dst *html.Node, c *html.Node) {
 	parent := c.Parent
 	n := clone(c)

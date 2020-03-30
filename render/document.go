@@ -22,23 +22,44 @@ type JSON struct {
 	json string
 }
 
+// DocumentFactory defines a document factory.
+type DocumentFactory struct {
+	generated                 string
+	outlineSelector           node.Check
+	sumtabSelector            node.Check
+	linksSelector             node.Check
+	refsSelector              node.Check
+	tablesSelector            node.Check
+	lookupSelector            node.Check
+	tocSelector               node.Check
+	scriptsToDeleteSelector   node.Check
+	scriptsToKeepSelector     node.Check
+	commentTargetSelector     node.Check
+	chapterTableSelector      node.Check
+	disableAtributeSelector   node.Check
+	noticePlaceholder         node.Check
+	seeAlsoPlaceholder        node.Check
+	placeholderTargetSelector node.Check
+}
+
 // Document defines a document to render as JSON
 type Document struct {
+	DocID     string              `json:"-"`
 	Generated string              `json:"generated"`
 	Title     string              `json:"title"`
+	Metas     []map[string]string `json:"metas"`
 	Outline   *JSON               `json:"outline"`
 	Sumtab    *JSON               `json:"sumtab"`
 	DocLinks  *JSON               `json:"links"`
 	SeeAlso   *JSON               `json:"seealso"`
 	Tables    *JSON               `json:"tables"`
 	Lookup    *JSON               `json:"lookup"`
-	Metas     []map[string]string `json:"metas"`
 	Scripts   []map[string]string `json:"scripts"`
 	Body      string              `json:"body"`
 }
 
-// Transform transforms a HTML node to a document structure for JSON output.
-func Transform(htmlDoc *html.Node, generated string) *Document {
+// NewDocumentFactory creates a document factory.
+func NewDocumentFactory(appName string) *DocumentFactory {
 	scriptSelector := node.Element("script")
 	outLineAttrChecker := node.AttrEquals("id", "outline")
 	sumtabAttrChecker := node.AttrEquals("id", "sumtab")
@@ -47,38 +68,57 @@ func Transform(htmlDoc *html.Node, generated string) *Document {
 	tablesAttrChecker := node.AttrEquals("id", "tables")
 	lookupAttrChecker := node.AttrEquals("id", "lookup")
 	tocAttrChecker := node.AttrEquals("id", "script_toc")
+	scriptsToDeleteSelector := node.And(scriptSelector, node.Or(outLineAttrChecker, sumtabAttrChecker,
+		linksAttrChecker, refsAttrChecker, tablesAttrChecker, lookupAttrChecker, tocAttrChecker))
+	return &DocumentFactory{
+		generated:                 appName,
+		outlineSelector:           node.And(scriptSelector, outLineAttrChecker),
+		sumtabSelector:            node.And(scriptSelector, sumtabAttrChecker),
+		linksSelector:             node.And(scriptSelector, linksAttrChecker),
+		refsSelector:              node.And(scriptSelector, refsAttrChecker),
+		tablesSelector:            node.And(scriptSelector, tablesAttrChecker),
+		lookupSelector:            node.And(scriptSelector, lookupAttrChecker),
+		tocSelector:               node.And(scriptSelector, tocAttrChecker),
+		scriptsToDeleteSelector:   scriptsToDeleteSelector,
+		scriptsToKeepSelector:     node.And(scriptSelector, node.Not(scriptsToDeleteSelector)),
+		commentTargetSelector:     commentTargetSelector(),
+		chapterTableSelector:      chapterTableSelector(),
+		disableAtributeSelector:   disableAtributeSelector(),
+		noticePlaceholder:         noticePlaceholder(),
+		seeAlsoPlaceholder:        seeAlsoPlaceholder(),
+		placeholderTargetSelector: placeholderTargetSelector()}
+}
+
+// Transform transforms a HTML node to a document structure for JSON output.
+func (df *DocumentFactory) Transform(htmlDoc *html.Node) *Document {
 	head := node.FindFirst(htmlDoc, node.Element("head"))
-	title := node.Content(node.FindFirst(head, node.Element("title")))
-	jsonOutline := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, outLineAttrChecker)), jsonObject)
-	jsonSumtab := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, sumtabAttrChecker)), jsonObject)
-	jsonLinks := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, linksAttrChecker)), jsonObject)
-	jsonRefs := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, refsAttrChecker)), jsonObject)
-	jsonTables := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, tablesAttrChecker)), jsonArray)
-	jsonLookup := formatJSON(node.FindFirst(htmlDoc, node.And(scriptSelector, lookupAttrChecker)), jsonArray)
 	metas := toMetas(node.FindAll(head, node.Element("meta")))
-	action := node.NewAction(getDocID(metas))
-	scriptsToDelete := node.And(scriptSelector, node.Or(outLineAttrChecker, sumtabAttrChecker, linksAttrChecker, refsAttrChecker, tablesAttrChecker, lookupAttrChecker, tocAttrChecker))
-	scripts := node.ToMapArray(node.FindAll(head, node.And(scriptSelector, node.Not(scriptsToDelete))))
-	body := node.FindFirst(htmlDoc, node.Element("body"))
-	san1Body := addNoticePlaceholdersIfNeeded(action, body)
-	san2Body := addSeeAlsoPlaceholdersIfNeeded(action, san1Body)
-	san3Body := node.Remove(san2Body, scriptsToDelete)
-	san4Body := node.ReplaceWithComments(san3Body, commentTargetSelector())
-	san5Body := action.WrapTables(san4Body, chapterTableSelector())
-	san6Body := action.DisableAttribute(san5Body, "onclick", disableAtributeSelector())
-	san7Body := node.RenderChildrenCommentParent(san6Body)
+	docID := getDocID(metas)
+	action := node.NewAction(docID)
 	return &Document{
-		Generated: "docsan " + generated,
-		Title:     title,
-		Outline:   jsonOutline,
-		Sumtab:    jsonSumtab,
-		DocLinks:  jsonLinks,
-		SeeAlso:   jsonRefs,
-		Tables:    jsonTables,
-		Lookup:    jsonLookup,
+		DocID:     docID,
+		Generated: df.generated,
+		Title:     node.Content(node.FindFirst(head, node.Element("title"))),
 		Metas:     metas,
-		Scripts:   scripts,
-		Body:      san7Body}
+		Outline:   formatJSON(node.FindFirst(htmlDoc, df.outlineSelector), jsonObject),
+		Sumtab:    formatJSON(node.FindFirst(htmlDoc, df.sumtabSelector), jsonObject),
+		DocLinks:  formatJSON(node.FindFirst(htmlDoc, df.linksSelector), jsonObject),
+		SeeAlso:   formatJSON(node.FindFirst(htmlDoc, df.refsSelector), jsonObject),
+		Tables:    formatJSON(node.FindFirst(htmlDoc, df.tablesSelector), jsonArray),
+		Lookup:    formatJSON(node.FindFirst(htmlDoc, df.lookupSelector), jsonArray),
+		Scripts:   node.ToMapArray(node.FindAll(head, df.scriptsToKeepSelector)),
+		Body:      df.renderBody(htmlDoc, action)}
+}
+
+func (df *DocumentFactory) renderBody(htmlDoc *html.Node, action *node.Action) string {
+	body1 := node.FindFirst(htmlDoc, node.Element("body"))
+	body2 := df.addNoticePlaceholdersIfNeeded(action, body1)
+	body3 := df.addSeeAlsoPlaceholdersIfNeeded(action, body2)
+	body4 := node.Remove(body3, df.scriptsToDeleteSelector)
+	body5 := node.ReplaceWithComments(body4, df.commentTargetSelector)
+	body6 := action.WrapTables(body5, df.chapterTableSelector)
+	body7 := action.DisableAttribute(body6, "onclick", df.disableAtributeSelector)
+	return node.RenderChildren(body7)
 }
 
 // ToJSON renders a document to JSON.
@@ -122,18 +162,18 @@ func disableAtributeSelector() node.Check {
 	return node.And(node.AnyElement(), clickEvents, node.Not(simultaxButton))
 }
 
-func addNoticePlaceholdersIfNeeded(action *node.Action, body *html.Node) *html.Node {
-	noticePlaceholders := node.FindFirst(body, noticePlaceholder())
+func (df *DocumentFactory) addNoticePlaceholdersIfNeeded(action *node.Action, body *html.Node) *html.Node {
+	noticePlaceholders := node.FindFirst(body, df.noticePlaceholder)
 	if noticePlaceholders == nil {
-		return action.AddNoticePlaceholders(body, placeholderTargetSelector())
+		return action.AddNoticePlaceholders(body, df.placeholderTargetSelector)
 	}
 	return body
 }
 
-func addSeeAlsoPlaceholdersIfNeeded(action *node.Action, body *html.Node) *html.Node {
-	seeAlsoPlaceholders := node.FindFirst(body, seeAlsoPlaceholder())
+func (df *DocumentFactory) addSeeAlsoPlaceholdersIfNeeded(action *node.Action, body *html.Node) *html.Node {
+	seeAlsoPlaceholders := node.FindFirst(body, df.seeAlsoPlaceholder)
 	if seeAlsoPlaceholders == nil {
-		return action.AddSeeAlsoPlaceholders(body, placeholderTargetSelector())
+		return action.AddSeeAlsoPlaceholders(body, df.placeholderTargetSelector)
 	}
 	return body
 }

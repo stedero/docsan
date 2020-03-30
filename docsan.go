@@ -1,11 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"runtime/debug"
+	"runtime"
 	"strings"
+	"time"
 
 	"golang.org/x/net/html"
 	"ibfd.org/docsan/config"
@@ -13,23 +15,27 @@ import (
 	"ibfd.org/docsan/render"
 )
 
-const maxFormParseMemorySizeBytes = 10 * 1024 * 1024
+var noFileError error
 
 func main() {
 	defer config.CloseLog()
+	noFileError = errors.New("no file provided")
 	server := http.Server{Addr: ":" + config.GetPort()}
-	log.Infof("docsan %s started on %s", version, server.Addr)
-	http.HandleFunc("/", handle)
+	log.Infof("%s started on %s", appName(), server.Addr)
+	df := render.NewDocumentFactory(appName())
+	http.HandleFunc("/", handler(df))
 	server.ListenAndServe()
 }
 
-func handle(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		showForm(w)
-	case "POST":
-		process(w, r)
-	default:
+func handler(df *render.DocumentFactory) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			showForm(w)
+		case "POST":
+			process(df, w, r)
+		default:
+		}
 	}
 }
 
@@ -51,33 +57,50 @@ func showForm(w http.ResponseWriter) {
 	w.Write([]byte(form))
 }
 
-func process(w http.ResponseWriter, r *http.Request) {
+func process(df *render.DocumentFactory, w http.ResponseWriter, r *http.Request) {
 	defer serverError(w, r)
 	reader, err := getReader(r)
 	if err == nil {
+		total := timer()
 		htmlDoc, err := html.Parse(reader)
 		if err == nil {
-			document := render.Transform(htmlDoc, version)
+			document := df.Transform(htmlDoc)
 			setServer(w)
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(200)
 			err = document.ToJSON(w)
+			if document.DocID != "" {
+				log.Debugf("transforming %s took %s", document.DocID, total())
+			}
 		}
 	}
 	if err != nil {
-		msg := fmt.Sprintf("failed to sanitize: %v", err)
-		log.Errorf(msg)
-		setServer(w)
-		w.WriteHeader(500)
-		w.Write([]byte(msg))
+		if err == noFileError {
+			writeError(w, 400, err.Error())
+		} else {
+			writeError(w, 500, fmt.Sprintf("failed to sanitize: %v", err))
+		}
 	}
+}
+
+func writeError(w http.ResponseWriter, status int, msg string) {
+	if status >= 500 {
+		log.Errorf(msg)
+	}
+	setServer(w)
+	w.WriteHeader(status)
+	w.Write([]byte(msg))
 }
 
 func getReader(r *http.Request) (io.Reader, error) {
 	contentType := r.Header["Content-Type"]
 	if contentType != nil && strings.HasPrefix(contentType[0], "multipart/form-data") {
-		r.ParseMultipartForm(maxFormParseMemorySizeBytes)
-		fileHeader := r.MultipartForm.File["upload"][0]
+		r.ParseMultipartForm(1 << 20)
+		fileHeaders := r.MultipartForm.File["upload"]
+		if fileHeaders == nil {
+			return nil, noFileError
+		}
+		fileHeader := fileHeaders[0]
 		return fileHeader.Open()
 	}
 	return r.Body, nil
@@ -94,11 +117,28 @@ func serverError(w http.ResponseWriter, rec *http.Request) {
 	if r := recover(); r != nil {
 		msg := fmt.Sprintf("%v", r)
 		log.Error(msg)
-		debug.PrintStack()
+		logStackDump()
 		setServer(w)
 		w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(msg))
+	}
+}
+
+func logStackDump() {
+	buf := make([]byte, 1<<16)
+	stackSize := runtime.Stack(buf, true)
+	stackdump := string(buf[0:stackSize])
+	entries := strings.Split(stackdump, "\n")
+	for _, entry := range entries {
+		log.Errorf("\t%s", entry)
+	}
+}
+
+func timer() func() time.Duration {
+	start := time.Now()
+	return func() time.Duration {
+		return time.Since(start)
 	}
 }
 
