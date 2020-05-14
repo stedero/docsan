@@ -148,9 +148,6 @@ func (action *Action) AddSeeAlsoPlaceholders(node *html.Node, accept Check) *htm
 // WrapTables wraps nodes in a div
 func (action *Action) WrapTables(node *html.Node, accept Check) *html.Node {
 	nodes := FindAll(node, accept)
-	if len(nodes) > 0 {
-		action.Log(fmt.Sprintf("wrapping %d tables", len(nodes)))
-	}
 	for _, n := range nodes {
 		attr1 := html.Attribute{Key: "class", Val: "ib-table-wrapper"}
 		attr2 := html.Attribute{Key: "data-generator", Val: "docsan"}
