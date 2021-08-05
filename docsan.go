@@ -70,7 +70,7 @@ func process(df *render.DocumentFactory, w http.ResponseWriter, r *http.Request)
 			w.WriteHeader(200)
 			err = document.ToJSON(w)
 			if document.DocID != "" {
-				log.Debugf("transforming %s took %s", document.DocID, total())
+				log.Debugf("%s: transforming %s took %s", r.Host, document.DocID, total())
 			}
 		}
 	}
