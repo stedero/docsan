@@ -2,7 +2,6 @@ package render
 
 import (
 	"encoding/json"
-	"io"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -127,14 +126,12 @@ func (df *DocumentFactory) renderBody(htmlDoc *html.Node, action *node.Action) s
 }
 
 // ToJSON renders a document to JSON.
-func (document *Document) ToJSON(w io.Writer) error {
-	encoder := json.NewEncoder(w)
+func (document *Document) ToJSON() ([]byte, error) {
 	if config.JSONPretty() {
-		encoder.SetIndent("", "  ")
+		return json.MarshalIndent(document, "", "  ")
 	} else {
-		encoder.SetIndent("", "")
+		return json.Marshal(document)
 	}
-	return encoder.Encode(document)
 }
 
 // MarshalJSON marshals a pre-rendered JSON object
