@@ -44,19 +44,19 @@ type DocumentFactory struct {
 
 // Document defines a document to render as JSON
 type Document struct {
-	DocID     string              `json:"-"`
-	Generated string              `json:"generated"`
-	Title     string              `json:"title"`
-	Metas     []map[string]string `json:"metas"`
-	Outline   *JSON               `json:"outline"`
-	Sumtab    *JSON               `json:"sumtab"`
-	DocLinks  *JSON               `json:"links"`
-	SeeAlso   *JSON               `json:"seealso"`
-	Tables    *JSON               `json:"tables"`
-	Lookup    *JSON               `json:"lookup"`
-	// SpecialCopyrights *JSON               `json:"specialcopyrights"`
-	Scripts []map[string]string `json:"scripts"`
-	Body    string              `json:"body"`
+	DocID             string              `json:"-"`
+	Generated         string              `json:"generated"`
+	Title             string              `json:"title"`
+	Metas             []map[string]string `json:"metas"`
+	Outline           *JSON               `json:"outline"`
+	Sumtab            *JSON               `json:"sumtab"`
+	DocLinks          *JSON               `json:"links"`
+	SeeAlso           *JSON               `json:"seealso"`
+	Tables            *JSON               `json:"tables"`
+	Lookup            *JSON               `json:"lookup"`
+	SpecialCopyrights *JSON               `json:"specialcopyrights"`
+	Scripts           []map[string]string `json:"scripts"`
+	Body              string              `json:"body"`
 }
 
 // NewDocumentFactory creates a document factory.
@@ -99,19 +99,19 @@ func (df *DocumentFactory) Transform(htmlDoc *html.Node) *Document {
 	docID := getDocID(metas)
 	action := node.NewAction(docID)
 	return &Document{
-		DocID:     docID,
-		Generated: df.generated,
-		Title:     node.Content(node.FindFirst(head, node.Element("title"))),
-		Metas:     metas,
-		Outline:   formatJSON(node.FindFirst(htmlDoc, df.outlineSelector), jsonObject),
-		Sumtab:    formatJSON(node.FindFirst(htmlDoc, df.sumtabSelector), jsonObject),
-		DocLinks:  formatJSON(node.FindFirst(htmlDoc, df.linksSelector), jsonObject),
-		SeeAlso:   formatJSON(node.FindFirst(htmlDoc, df.refsSelector), jsonObject),
-		Tables:    formatJSON(node.FindFirst(htmlDoc, df.tablesSelector), jsonArray),
-		Lookup:    formatJSON(node.FindFirst(htmlDoc, df.lookupSelector), jsonArray),
-		// SpecialCopyrights: formatJSON(node.FindFirst(htmlDoc, df.specialCopyrightsSelector), jsonObject),
-		Scripts: node.ToMapArray(node.FindAll(head, df.scriptsToKeepSelector)),
-		Body:    df.renderBody(htmlDoc, action)}
+		DocID:             docID,
+		Generated:         df.generated,
+		Title:             node.Content(node.FindFirst(head, node.Element("title"))),
+		Metas:             metas,
+		Outline:           formatJSON(node.FindFirst(htmlDoc, df.outlineSelector), jsonObject),
+		Sumtab:            formatJSON(node.FindFirst(htmlDoc, df.sumtabSelector), jsonObject),
+		DocLinks:          formatJSON(node.FindFirst(htmlDoc, df.linksSelector), jsonObject),
+		SeeAlso:           formatJSON(node.FindFirst(htmlDoc, df.refsSelector), jsonObject),
+		Tables:            formatJSON(node.FindFirst(htmlDoc, df.tablesSelector), jsonArray),
+		Lookup:            formatJSON(node.FindFirst(htmlDoc, df.lookupSelector), jsonArray),
+		SpecialCopyrights: formatJSON(node.FindFirst(htmlDoc, df.specialCopyrightsSelector), jsonObject),
+		Scripts:           node.ToMapArray(node.FindAll(head, df.scriptsToKeepSelector)),
+		Body:              df.renderBody(htmlDoc, action)}
 }
 
 func (df *DocumentFactory) renderBody(htmlDoc *html.Node, action *node.Action) string {
