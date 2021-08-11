@@ -60,25 +60,33 @@ func showForm(w http.ResponseWriter) {
 func process(df *render.DocumentFactory, w http.ResponseWriter, r *http.Request) {
 	defer serverError(w, r)
 	reader, err := getReader(r)
-	if err == nil {
-		total := timer()
-		htmlDoc, err := html.Parse(reader)
-		if err == nil {
-			document := df.Transform(htmlDoc)
-			setServer(w)
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			w.WriteHeader(200)
-			err = document.ToJSON(w)
-			if document.DocID != "" {
-				log.Debugf("%s: transforming %s took %s", r.Host, document.DocID, total())
-			}
-		}
-	}
 	if err != nil {
 		if err == noFileError {
 			writeError(w, 400, err.Error())
 		} else {
 			writeError(w, 500, fmt.Sprintf("failed to sanitize: %v", err))
+		}
+	} else {
+		total := timer()
+		htmlDoc, err := html.Parse(reader)
+		if err != nil {
+			writeError(w, 400, fmt.Sprintf("failed to parse HTML: %v", err))
+		} else {
+			document := df.Transform(htmlDoc)
+			json, err := document.ToJSON()
+			if err != nil {
+				msg := fmt.Sprintf("failed to sanitize %s: %v", document.DocID, err)
+				writeError(w, 400, msg)
+				log.Errorf(msg)
+			} else {
+				setServer(w)
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				w.WriteHeader(200)
+				w.Write(json)
+				if document.DocID != "" {
+					log.Debugf("%s: transforming %s took %s", r.Host, document.DocID, total())
+				}
+			}
 		}
 	}
 }
@@ -104,12 +112,6 @@ func getReader(r *http.Request) (io.Reader, error) {
 		return fileHeader.Open()
 	}
 	return r.Body, nil
-}
-
-func logHeaders(r *http.Request) {
-	for k, v := range r.Header {
-		log.Debugf("key[%s] = %v\n", k, v)
-	}
 }
 
 // ServerError maps errors to internal server errors.
