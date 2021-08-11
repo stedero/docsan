@@ -69,7 +69,9 @@ func process(df *render.DocumentFactory, w http.ResponseWriter, r *http.Request)
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(200)
 			err = document.ToJSON(w)
-			if document.DocID != "" {
+			if err != nil {
+				log.Errorf("%s: transformation of %s failed: %v", r.Host, document.DocID, err)
+			} else if document.DocID != "" {
 				log.Debugf("%s: transforming %s took %s", r.Host, document.DocID, total())
 			}
 		}
