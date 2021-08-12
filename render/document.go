@@ -6,6 +6,7 @@ import (
 
 	"golang.org/x/net/html"
 	"ibfd.org/docsan/config"
+	log "ibfd.org/docsan/log4u"
 	"ibfd.org/docsan/node"
 )
 
@@ -136,6 +137,12 @@ func (document *Document) ToJSON() ([]byte, error) {
 
 // MarshalJSON marshals a pre-rendered JSON object
 func (j JSON) MarshalJSON() ([]byte, error) {
+	var result map[string]interface{}
+	err := json.Unmarshal([]byte(j.json), &result)
+	if err != nil {
+		log.Errorf("invalid JSON ignored: %s", j.json)
+		return []byte("{}"), nil
+	}
 	return []byte(j.json), nil
 }
 
