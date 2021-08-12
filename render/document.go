@@ -137,8 +137,9 @@ func (document *Document) ToJSON() ([]byte, error) {
 
 // MarshalJSON marshals a pre-rendered JSON object
 func (j JSON) MarshalJSON() ([]byte, error) {
+	test := `{"data":` + j.json + "}"
 	var result map[string]interface{}
-	err := json.Unmarshal([]byte(j.json), &result)
+	err := json.Unmarshal([]byte(test), &result)
 	if err != nil {
 		log.Errorf("invalid JSON ignored: %s", j.json)
 		return []byte("{}"), nil
