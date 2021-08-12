@@ -19,7 +19,8 @@ const (
 
 // JSON defines pre-rendered JSON
 type JSON struct {
-	json string
+	docID string
+	json  string
 }
 
 // DocumentFactory defines a document factory.
@@ -104,13 +105,13 @@ func (df *DocumentFactory) Transform(htmlDoc *html.Node) *Document {
 		Generated:         df.generated,
 		Title:             node.Content(node.FindFirst(head, node.Element("title"))),
 		Metas:             metas,
-		Outline:           formatJSON(node.FindFirst(htmlDoc, df.outlineSelector), jsonObject),
-		Sumtab:            formatJSON(node.FindFirst(htmlDoc, df.sumtabSelector), jsonObject),
-		DocLinks:          formatJSON(node.FindFirst(htmlDoc, df.linksSelector), jsonObject),
-		SeeAlso:           formatJSON(node.FindFirst(htmlDoc, df.refsSelector), jsonObject),
-		Tables:            formatJSON(node.FindFirst(htmlDoc, df.tablesSelector), jsonArray),
-		Lookup:            formatJSON(node.FindFirst(htmlDoc, df.lookupSelector), jsonArray),
-		SpecialCopyrights: formatJSON(node.FindFirst(htmlDoc, df.specialCopyrightsSelector), jsonObject),
+		Outline:           formatJSON(node.FindFirst(htmlDoc, df.outlineSelector), docID, jsonObject),
+		Sumtab:            formatJSON(node.FindFirst(htmlDoc, df.sumtabSelector), docID, jsonObject),
+		DocLinks:          formatJSON(node.FindFirst(htmlDoc, df.linksSelector), docID, jsonObject),
+		SeeAlso:           formatJSON(node.FindFirst(htmlDoc, df.refsSelector), docID, jsonObject),
+		Tables:            formatJSON(node.FindFirst(htmlDoc, df.tablesSelector), docID, jsonArray),
+		Lookup:            formatJSON(node.FindFirst(htmlDoc, df.lookupSelector), docID, jsonArray),
+		SpecialCopyrights: formatJSON(node.FindFirst(htmlDoc, df.specialCopyrightsSelector), docID, jsonObject),
 		Scripts:           node.ToMapArray(node.FindAll(head, df.scriptsToKeepSelector)),
 		Body:              df.renderBody(htmlDoc, action)}
 }
@@ -141,7 +142,7 @@ func (j JSON) MarshalJSON() ([]byte, error) {
 	var result map[string]interface{}
 	err := json.Unmarshal([]byte(test), &result)
 	if err != nil {
-		log.Errorf("invalid JSON ignored: %s", j.json)
+		log.Errorf("invalid JSON in %s ignored: %s", j.docID, j.json)
 		return []byte("{}"), nil
 	}
 	return []byte(j.json), nil
@@ -228,7 +229,7 @@ func getDocID(metas []map[string]string) string {
 	return "unknown"
 }
 
-func formatJSON(n *html.Node, jtype jsonType) *JSON {
+func formatJSON(n *html.Node, docID string, jtype jsonType) *JSON {
 	var data string
 	if n == nil {
 		switch jtype {
@@ -240,5 +241,5 @@ func formatJSON(n *html.Node, jtype jsonType) *JSON {
 	} else {
 		data = n.FirstChild.Data
 	}
-	return &JSON{data}
+	return &JSON{docID, data}
 }
