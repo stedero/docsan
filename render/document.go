@@ -20,6 +20,7 @@ const (
 // JSON defines pre-rendered JSON
 type JSON struct {
 	docID string
+	jtype jsonType
 	json  string
 }
 
@@ -142,8 +143,8 @@ func (j JSON) MarshalJSON() ([]byte, error) {
 	var result map[string]interface{}
 	err := json.Unmarshal([]byte(test), &result)
 	if err != nil {
-		log.Errorf("invalid JSON in %s ignored: %s", j.docID, j.json)
-		return []byte("{}"), nil
+		log.Errorf("invalid JSON in %s ignored: %s", j.docID, strings.TrimSpace(j.json))
+		return []byte(j.jtype.emptyJSON()), nil
 	}
 	return []byte(j.json), nil
 }
@@ -232,14 +233,16 @@ func getDocID(metas []map[string]string) string {
 func formatJSON(n *html.Node, docID string, jtype jsonType) *JSON {
 	var data string
 	if n == nil {
-		switch jtype {
-		case jsonArray:
-			data = "[]"
-		case jsonObject:
-			data = "{}"
-		}
+		data = jtype.emptyJSON()
 	} else {
 		data = n.FirstChild.Data
 	}
-	return &JSON{docID, data}
+	return &JSON{docID, jtype, data}
+}
+
+func (jtype jsonType) emptyJSON() string {
+	if jtype == jsonArray {
+		return "[]"
+	}
+	return "{}"
 }
